@@ -290,11 +290,17 @@ async function loadUsers() {
     
     for (const doc of snapshot.docs) {
       const userData = doc.data();
+      
+      // Пропускаем удаленных пользователей
+      if (userData.deleted) {
+        continue;
+      }
+      
       console.log(`Обрабатываем пользователя ${doc.id}:`, userData);
       
-      // Подсчитываем количество проектов пользователя
+      // Подсчитываем количество проектов пользователя (исключая удаленные)
       try {
-        const projectsSnapshot = await window.db.collection('users').doc(doc.id).collection('projects').get();
+        const projectsSnapshot = await window.db.collection('users').doc(doc.id).collection('projects').where('deleted', '!=', true).get();
         const projectsCount = projectsSnapshot.size;
         
         allUsers.push({
@@ -373,10 +379,22 @@ async function loadProjects() {
 
     for (const userDoc of usersSnapshot.docs) {
       const userData = userDoc.data();
+      
+      // Пропускаем удаленных пользователей
+      if (userData.deleted) {
+        continue;
+      }
+      
       const projectsSnapshot = await window.db.collection('users').doc(userDoc.id).collection('projects').orderBy('createdAt', 'desc').get();
       
       projectsSnapshot.forEach(projectDoc => {
         const projectData = projectDoc.data();
+        
+        // Пропускаем удаленные проекты
+        if (projectData.deleted) {
+          return;
+        }
+        
         allProjects.push({
           id: projectDoc.id,
           userId: userDoc.id,
@@ -429,10 +447,12 @@ async function loadMessages() {
 
   try {
     const snapshot = await window.db.collection('chat-messages').orderBy('created', 'desc').limit(100).get();
-    allMessages = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    allMessages = snapshot.docs
+      .map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      .filter(message => !message.deleted); // Исключаем удаленные сообщения
 
     renderMessages(allMessages);
     console.log(`Загружено ${allMessages.length} сообщений`);
@@ -1152,12 +1172,13 @@ async function generateReportFile(data, format, reportName) {
   return { blob, filename, size };
 }
 
-// Генерация PDF отчета с использованием pdfMake (поддержка русского языка)
+// Генерация PDF отчета с использованием pdfMake
 async function generatePDFReport(data) {
   try {
     // Проверяем доступность pdfMake
-    if (typeof pdfMake === 'undefined') {
-      throw new Error('pdfMake не загружен');
+    if (typeof pdfMake === 'undefined' || typeof pdfMake.createPdf !== 'function') {
+      console.warn('pdfMake не доступен, используем fallback');
+      throw new Error('pdfMake не инициализирован');
     }
     
     // Переводим ключи на русский
@@ -2815,6 +2836,14 @@ async function deleteUser(userId) {
       return;
     }
     
+    // Добавляем поле deleted в Firebase вместо физического удаления
+    const userDocId = user.id || user.uid;
+    await window.db.collection('users').doc(userDocId).update({
+      deleted: true,
+      deletedAt: new Date().toISOString(),
+      deletedBy: currentUser.email
+    });
+    
     // Добавляем в список на удаление
     const pendingUser = {
       ...user,
@@ -2849,6 +2878,13 @@ async function deleteProject(userId, projectId) {
       return;
     }
     
+    // Добавляем поле deleted в Firebase вместо физического удаления
+    await window.db.collection('users').doc(userId).collection('projects').doc(projectId).update({
+      deleted: true,
+      deletedAt: new Date().toISOString(),
+      deletedBy: currentUser.email
+    });
+    
     // Добавляем в список на удаление
     const pendingProject = {
       ...project,
@@ -2881,6 +2917,13 @@ async function deleteMessage(messageId) {
       showNotification('Сообщение не найдено', 'error');
       return;
     }
+    
+    // Добавляем поле deleted в Firebase вместо физического удаления
+    await window.db.collection('messages').doc(messageId).update({
+      deleted: true,
+      deletedAt: new Date().toISOString(),
+      deletedBy: currentUser.email
+    });
     
     // Находим пользователя для получения аватара
     const messageUser = allUsers.find(u => u.email === message.user || u.displayName === message.user);
@@ -2922,6 +2965,14 @@ async function restoreUser(userId) {
     
     const user = pendingDeletionUsers[userIndex];
     
+    // Убираем поле deleted из Firebase
+    const userDocId = user.uid || user.id;
+    await window.db.collection('users').doc(userDocId).update({
+      deleted: firebase.firestore.FieldValue.delete(),
+      deletedAt: firebase.firestore.FieldValue.delete(),
+      deletedBy: firebase.firestore.FieldValue.delete()
+    });
+    
     // Убираем метаданные удаления
     delete user.deletedAt;
     delete user.deletedBy;
@@ -2956,6 +3007,13 @@ async function restoreProject(userId, projectId) {
     
     const project = pendingDeletionProjects[projectIndex];
     
+    // Убираем поле deleted из Firebase
+    await window.db.collection('users').doc(userId).collection('projects').doc(projectId).update({
+      deleted: firebase.firestore.FieldValue.delete(),
+      deletedAt: firebase.firestore.FieldValue.delete(),
+      deletedBy: firebase.firestore.FieldValue.delete()
+    });
+    
     // Убираем метаданные удаления
     delete project.deletedAt;
     delete project.deletedBy;
@@ -2989,6 +3047,13 @@ async function restoreMessage(messageId) {
     }
     
     const message = pendingDeletionMessages[messageIndex];
+    
+    // Убираем поле deleted из Firebase
+    await window.db.collection('messages').doc(messageId).update({
+      deleted: firebase.firestore.FieldValue.delete(),
+      deletedAt: firebase.firestore.FieldValue.delete(),
+      deletedBy: firebase.firestore.FieldValue.delete()
+    });
     
     // Убираем метаданные удаления
     delete message.deletedAt;
@@ -3029,8 +3094,9 @@ async function permanentDeleteUser(userId) {
     
     const user = pendingDeletionUsers[userIndex];
     
-    // Удаляем из Firebase (если нужно)
-    // await window.db.collection('users').doc(userId).delete();
+    // Удаляем из Firebase окончательно
+    const userDocId = user.uid || user.id;
+    await window.db.collection('users').doc(userDocId).delete();
     
     // Удаляем из корзины
     pendingDeletionUsers.splice(userIndex, 1);
@@ -3061,8 +3127,8 @@ async function permanentDeleteProject(userId, projectId) {
     
     const project = pendingDeletionProjects[projectIndex];
     
-    // Удаляем из Firebase (если нужно)
-    // await window.db.collection('users').doc(userId).collection('projects').doc(projectId).delete();
+    // Удаляем из Firebase окончательно
+    await window.db.collection('users').doc(userId).collection('projects').doc(projectId).delete();
     
     // Удаляем из корзины
     pendingDeletionProjects.splice(projectIndex, 1);
@@ -3091,8 +3157,8 @@ async function permanentDeleteMessage(messageId) {
       return;
     }
     
-    // Удаляем из Firebase (если нужно)
-    // await window.db.collection('messages').doc(messageId).delete();
+    // Удаляем из Firebase окончательно
+    await window.db.collection('messages').doc(messageId).delete();
     
     // Удаляем из корзины
     pendingDeletionMessages.splice(messageIndex, 1);

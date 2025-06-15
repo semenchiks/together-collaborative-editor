@@ -20,6 +20,17 @@
   <script src="https://unpkg.com/pdfmake@0.2.7/build/pdfmake.min.js"></script>
   <script src="https://unpkg.com/pdfmake@0.2.7/build/vfs_fonts.js"></script>
   
+  <!-- Проверка загрузки pdfMake -->
+  <script>
+    window.addEventListener('load', function() {
+      if (typeof pdfMake !== 'undefined' && typeof pdfMake.createPdf === 'function') {
+        console.log('pdfMake успешно загружен');
+      } else {
+        console.warn('pdfMake не загружен или не инициализирован');
+      }
+    });
+  </script>
+  
   <!-- Chart.js для графиков и диаграмм -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
