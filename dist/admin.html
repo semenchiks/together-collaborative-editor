@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Админ панель</title>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-init.js"></script>
+  <script src="js/accessibility-init.js"></script>
+  
+  <!-- Библиотеки для экспорта отчетов -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  
+  <!-- Альтернативная библиотека для PDF с поддержкой Unicode -->
+  <script src="https://unpkg.com/pdfmake@0.2.7/build/pdfmake.min.js"></script>
+  <script src="https://unpkg.com/pdfmake@0.2.7/build/vfs_fonts.js"></script>
+  
+  <!-- Chart.js для графиков и диаграмм -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- JSZip для экспорта графиков -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/admin-MbZ77vet.css">
+</head>
+<body>
+  <!-- Декоративные жёлтые элементы -->
+  <div class="yellow-deco deco-top-left"></div>
+  <div class="yellow-deco deco-top-right"></div>
+  <div class="yellow-deco deco-bottom-left"></div>
+  <div class="yellow-deco deco-bottom-right"></div>
+
+  <!-- Заголовок -->
+  <header class="admin-header">
+    <div class="header-content">
+      <h1>🛠️ Админ панель</h1>
+      <div class="header-actions">
+        <button id="logout-btn" class="logout-btn">Выйти</button>
+        <a href="index.html" class="back-btn">← Назад к сайту</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Авторизация админа -->
+  <div id="admin-auth-modal" class="modal show">
+    <div class="modal-content">
+      <h2>🔐 Вход в админ панель</h2>
+      <p style="color: #ccc; margin-bottom: 20px; text-align: center;">Доступ только для пользователей с ролью "Администратор"</p>
+      <div class="auth-form">
+        <input type="email" id="admin-email" placeholder="Email" required>
+        <input type="password" id="admin-password" placeholder="Пароль" required>
+        <button id="admin-login-btn">Войти</button>
+        <div id="admin-auth-error" class="error-message"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Основной контент -->
+  <main id="admin-content" class="admin-content" style="display: none;">
+    <!-- Статистика -->
+    <section class="stats-section">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">👥</div>
+          <div class="stat-info">
+            <div class="stat-number" id="users-count">0</div>
+            <div class="stat-label">Пользователей</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📁</div>
+          <div class="stat-info">
+            <div class="stat-number" id="projects-count">0</div>
+            <div class="stat-label">Проектов</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💬</div>
+          <div class="stat-info">
+            <div class="stat-number" id="messages-count">0</div>
+            <div class="stat-label">Сообщений</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Навигация по разделам -->
+    <nav class="admin-nav">
+      <button class="nav-btn active" data-section="users">👥 Пользователи</button>
+      <button class="nav-btn" data-section="projects">📁 Проекты</button>
+      <button class="nav-btn" data-section="messages">💬 Сообщения</button>
+      <button class="nav-btn" data-section="reports">📊 Отчеты</button>
+      <button class="nav-btn" data-section="pending-deletion">🗑️ На удалении</button>
+    </nav>
+
+    <!-- Секция пользователей -->
+    <section id="users-section" class="admin-section active">
+      <div class="section-header">
+        <h2>👥 Управление пользователями</h2>
+        <div class="section-actions">
+          <input type="text" id="users-search" placeholder="Поиск пользователей..." class="search-input">
+          <button id="refresh-users" class="refresh-btn">🔄 Обновить</button>
+        </div>
+      </div>
+      <div class="table-container">
+                  <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Фото</th>
+                <th>Имя</th>
+                <th>Email</th>
+                <th>Роль</th>
+                <th>Дата регистрации</th>
+                <th>Проектов</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+          <tbody id="users-table-body">
+            <tr><td colspan="6" class="loading">Загрузка пользователей...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Секция проектов -->
+    <section id="projects-section" class="admin-section">
+      <div class="section-header">
+        <h2>📁 Управление проектами</h2>
+        <div class="section-actions">
+          <input type="text" id="projects-search" placeholder="Поиск проектов..." class="search-input">
+          <select id="projects-filter" class="filter-select">
+            <option value="">Все проекты</option>
+            <option value="recent">Недавние</option>
+            <option value="popular">Популярные</option>
+          </select>
+          <button id="refresh-projects" class="refresh-btn">🔄 Обновить</button>
+        </div>
+      </div>
+      <div class="table-container">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Превью</th>
+              <th>Название</th>
+              <th>Автор</th>
+              <th>Дата создания</th>
+              <th>Размер</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody id="projects-table-body">
+            <tr><td colspan="6" class="loading">Загрузка проектов...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Секция сообщений -->
+    <section id="messages-section" class="admin-section">
+      <div class="section-header">
+        <h2>💬 Управление сообщениями</h2>
+        <div class="section-actions">
+          <input type="text" id="messages-search" placeholder="Поиск сообщений..." class="search-input">
+          <select id="messages-filter" class="filter-select">
+            <option value="">Все сообщения</option>
+            <option value="text">Текстовые</option>
+            <option value="project">Проекты</option>
+          </select>
+          <button id="refresh-messages" class="refresh-btn">🔄 Обновить</button>
+        </div>
+      </div>
+      <div class="table-container">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Аватар</th>
+              <th>Пользователь</th>
+              <th>Сообщение</th>
+              <th>Тип</th>
+              <th>Время</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody id="messages-table-body">
+            <tr><td colspan="6" class="loading">Загрузка сообщений...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Секция отчетов -->
+    <section id="reports-section" class="admin-section">
+      <div class="section-header">
+        <h2>📊 Система отчетов</h2>
+        <div class="section-actions">
+          <button id="refresh-reports" class="refresh-btn">🔄 Обновить данные</button>
+        </div>
+      </div>
+
+      <!-- Быстрые отчеты -->
+      <div class="reports-quick-section">
+        <h3>⚡ Быстрые отчеты</h3>
+        <div class="quick-reports-grid">
+          <div class="quick-report-card">
+            <div class="quick-report-icon">👥</div>
+            <div class="quick-report-info">
+              <h4>Отчет по пользователям</h4>
+              <p>Полная статистика пользователей</p>
+              <div class="quick-report-actions">
+                <button class="quick-report-btn" onclick="generateQuickReport('users', 'pdf')">📄 PDF</button>
+                <button class="quick-report-btn" onclick="generateQuickReport('users', 'excel')">📊 Excel</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="quick-report-card">
+            <div class="quick-report-icon">📁</div>
+            <div class="quick-report-info">
+              <h4>Отчет по проектам</h4>
+              <p>Статистика всех проектов</p>
+              <div class="quick-report-actions">
+                <button class="quick-report-btn" onclick="generateQuickReport('projects', 'pdf')">📄 PDF</button>
+                <button class="quick-report-btn" onclick="generateQuickReport('projects', 'excel')">📊 Excel</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="quick-report-card">
+            <div class="quick-report-icon">💬</div>
+            <div class="quick-report-info">
+              <h4>Отчет по сообщениям</h4>
+              <p>Активность в чате</p>
+              <div class="quick-report-actions">
+                <button class="quick-report-btn" onclick="generateQuickReport('messages', 'pdf')">📄 PDF</button>
+                <button class="quick-report-btn" onclick="generateQuickReport('messages', 'excel')">📊 Excel</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="quick-report-card">
+            <div class="quick-report-icon">📈</div>
+            <div class="quick-report-info">
+              <h4>Общая статистика</h4>
+              <p>Сводный отчет по платформе</p>
+              <div class="quick-report-actions">
+                <button class="quick-report-btn" onclick="generateQuickReport('summary', 'pdf')">📄 PDF</button>
+                <button class="quick-report-btn" onclick="generateQuickReport('summary', 'excel')">📊 Excel</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="quick-report-card">
+            <div class="quick-report-icon">📊</div>
+            <div class="quick-report-info">
+              <h4>Графики и диаграммы</h4>
+              <p>Визуализация данных</p>
+              <div class="quick-report-actions">
+                <button class="quick-report-btn primary" onclick="showChartsModal()">📈 Показать графики</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Кастомные отчеты -->
+      <div class="reports-custom-section">
+        <h3>🔧 Настраиваемые отчеты</h3>
+        <div class="custom-report-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="report-type">Тип отчета:</label>
+              <select id="report-type" class="filter-select">
+                <option value="users">Пользователи</option>
+                <option value="projects">Проекты</option>
+                <option value="messages">Сообщения</option>
+                <option value="activity">Активность</option>
+                <option value="custom">Комбинированный</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="report-period">Период:</label>
+              <select id="report-period" class="filter-select">
+                <option value="today">Сегодня</option>
+                <option value="week">Последняя неделя</option>
+                <option value="month">Последний месяц</option>
+                <option value="quarter">Последний квартал</option>
+                <option value="year">Последний год</option>
+                <option value="all">Все время</option>
+                <option value="custom">Настраиваемый период</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row" id="custom-date-range" style="display: none;">
+            <div class="form-group">
+              <label for="date-from">С даты:</label>
+              <input type="date" id="date-from" class="search-input">
+            </div>
+            <div class="form-group">
+              <label for="date-to">По дату:</label>
+              <input type="date" id="date-to" class="search-input">
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="report-format">Формат экспорта:</label>
+              <select id="report-format" class="filter-select">
+                <option value="pdf">PDF документ</option>
+                <option value="excel">Excel таблица</option>
+                <option value="csv">CSV файл</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="report-name">Название отчета:</label>
+              <input type="text" id="report-name" class="search-input" placeholder="Введите название отчета">
+            </div>
+          </div>
+          
+          <div class="form-actions">
+            <button id="generate-custom-report" class="primary-btn">📊 Сгенерировать отчет</button>
+            <button id="save-report-template" class="secondary-btn">💾 Сохранить шаблон</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- История отчетов -->
+      <div class="reports-history-section">
+        <h3>📋 История отчетов</h3>
+        <div class="table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Название</th>
+                <th>Тип</th>
+                <th>Период</th>
+                <th>Формат</th>
+                <th>Дата создания</th>
+                <th>Размер</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody id="reports-history-body">
+              <tr><td colspan="7" class="loading">История отчетов пуста</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Шаблоны отчетов -->
+      <div class="reports-templates-section">
+        <h3>📝 Сохраненные шаблоны</h3>
+        <div class="templates-grid" id="report-templates-grid">
+          <div class="template-card add-template" onclick="showAddTemplateModal()">
+            <div class="template-icon">➕</div>
+            <div class="template-title">Создать шаблон</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Секция элементов на удалении -->
+    <section id="pending-deletion-section" class="admin-section">
+      <div class="section-header">
+        <h2>🗑️ Элементы на удалении</h2>
+        <div class="section-actions">
+          <button id="refresh-pending" class="refresh-btn">🔄 Обновить</button>
+          <button id="clear-all-pending" class="danger-btn">🗑️ Очистить все</button>
+        </div>
+      </div>
+
+      <!-- Статистика элементов на удалении -->
+      <div class="pending-stats">
+        <div class="pending-stat-card">
+          <div class="pending-stat-icon">👥</div>
+          <div class="pending-stat-info">
+            <div class="pending-stat-number" id="pending-users-count">0</div>
+            <div class="pending-stat-label">Пользователей</div>
+          </div>
+        </div>
+        <div class="pending-stat-card">
+          <div class="pending-stat-icon">📁</div>
+          <div class="pending-stat-info">
+            <div class="pending-stat-number" id="pending-projects-count">0</div>
+            <div class="pending-stat-label">Проектов</div>
+          </div>
+        </div>
+        <div class="pending-stat-card">
+          <div class="pending-stat-icon">💬</div>
+          <div class="pending-stat-info">
+            <div class="pending-stat-number" id="pending-messages-count">0</div>
+            <div class="pending-stat-label">Сообщений</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Вкладки для разных типов элементов -->
+      <div class="pending-tabs">
+        <button class="pending-tab active" data-type="users">👥 Пользователи</button>
+        <button class="pending-tab" data-type="projects">📁 Проекты</button>
+        <button class="pending-tab" data-type="messages">💬 Сообщения</button>
+      </div>
+
+      <!-- Пользователи на удалении -->
+      <div id="pending-users" class="pending-content active">
+        <div class="section-header">
+          <h3>Пользователи на удалении</h3>
+          <div class="section-actions">
+            <input type="text" id="pending-users-search" placeholder="Поиск пользователей..." class="search-input">
+            <button id="restore-all-users" class="secondary-btn">↩️ Восстановить все</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Фото</th>
+                <th>Имя</th>
+                <th>Email</th>
+                <th>Роль</th>
+                <th>Дата удаления</th>
+                <th>Удалил</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody id="pending-users-table-body">
+              <tr><td colspan="7" class="loading">Нет пользователей на удалении</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Проекты на удалении -->
+      <div id="pending-projects" class="pending-content">
+        <div class="section-header">
+          <h3>Проекты на удалении</h3>
+          <div class="section-actions">
+            <input type="text" id="pending-projects-search" placeholder="Поиск проектов..." class="search-input">
+            <button id="restore-all-projects" class="secondary-btn">↩️ Восстановить все</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Превью</th>
+                <th>Название</th>
+                <th>Автор</th>
+                <th>Дата удаления</th>
+                <th>Удалил</th>
+                <th>Размер</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody id="pending-projects-table-body">
+              <tr><td colspan="7" class="loading">Нет проектов на удалении</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Сообщения на удалении -->
+      <div id="pending-messages" class="pending-content">
+        <div class="section-header">
+          <h3>Сообщения на удалении</h3>
+          <div class="section-actions">
+            <input type="text" id="pending-messages-search" placeholder="Поиск сообщений..." class="search-input">
+            <button id="restore-all-messages" class="secondary-btn">↩️ Восстановить все</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Аватар</th>
+                <th>Пользователь</th>
+                <th>Сообщение</th>
+                <th>Тип</th>
+                <th>Дата удаления</th>
+                <th>Удалил</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody id="pending-messages-table-body">
+              <tr><td colspan="7" class="loading">Нет сообщений на удалении</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Модальные окна -->
+  
+  <!-- Модальное окно просмотра проекта -->
+  <div id="project-modal" class="modal">
+    <div class="modal-content large">
+      <div class="modal-header">
+        <h3 id="project-modal-title">Просмотр проекта</h3>
+        <button class="close-btn" onclick="closeModal('project-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="project-preview">
+          <div class="code-section">
+            <h4>HTML:</h4>
+            <pre id="project-html-code"></pre>
+          </div>
+          <div class="code-section">
+            <h4>CSS:</h4>
+            <pre id="project-css-code"></pre>
+          </div>
+          <div class="preview-section">
+            <h4>Превью:</h4>
+            <iframe id="project-preview-frame" sandbox="allow-scripts"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно подтверждения -->
+  <div id="confirm-modal" class="modal">
+    <div class="modal-content small">
+      <div class="modal-header">
+        <h3 id="confirm-title">Подтверждение</h3>
+        <button class="close-btn" onclick="closeModal('confirm-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-message">Вы уверены?</p>
+        <div class="modal-actions">
+          <button id="confirm-yes" class="danger-btn">Да</button>
+          <button id="confirm-no" class="secondary-btn" onclick="closeModal('confirm-modal')">Отмена</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно создания шаблона отчета -->
+  <div id="template-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📝 Создание шаблона отчета</h3>
+        <button class="close-btn" onclick="closeModal('template-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="template-name">Название шаблона:</label>
+          <input type="text" id="template-name" class="search-input" placeholder="Введите название шаблона">
+        </div>
+        
+        <div class="form-group">
+          <label for="template-description">Описание:</label>
+          <textarea id="template-description" class="search-input" rows="3" placeholder="Описание шаблона"></textarea>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="template-type">Тип отчета:</label>
+            <select id="template-type" class="filter-select">
+              <option value="users">Пользователи</option>
+              <option value="projects">Проекты</option>
+              <option value="messages">Сообщения</option>
+              <option value="activity">Активность</option>
+              <option value="custom">Комбинированный</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="template-format">Формат по умолчанию:</label>
+            <select id="template-format" class="filter-select">
+              <option value="pdf">PDF документ</option>
+              <option value="excel">Excel таблица</option>
+              <option value="csv">CSV файл</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Включаемые данные:</label>
+          <div class="checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="include-summary" checked>
+              <span>Сводная информация</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="include-charts" checked>
+              <span>Графики и диаграммы</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="include-details">
+              <span>Детальные данные</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="include-trends">
+              <span>Анализ трендов</span>
+            </label>
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button id="save-template" class="primary-btn">💾 Сохранить шаблон</button>
+          <button onclick="closeModal('template-modal')" class="secondary-btn">Отмена</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Индикатор прогресса генерации отчета -->
+  <div id="report-progress-modal" class="modal">
+    <div class="modal-content small">
+      <div class="modal-header">
+        <h3>📊 Генерация отчета</h3>
+      </div>
+      <div class="modal-body">
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <div class="progress-text" id="progress-text">Подготовка данных...</div>
+          <div class="progress-percentage" id="progress-percentage">0%</div>
+        </div>
+        <div class="progress-details" id="progress-details">
+          <div class="progress-step">✓ Инициализация</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно с графиками и диаграммами -->
+  <div id="charts-modal" class="modal">
+    <div class="modal-content extra-large">
+      <div class="modal-header">
+        <h3>📈 Графики и диаграммы</h3>
+        <button class="close-btn" onclick="closeModal('charts-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="charts-container">
+          <div class="chart-section">
+            <h4>Распределение пользователей по ролям</h4>
+            <div class="chart-wrapper">
+              <canvas id="userRolesChart"></canvas>
+            </div>
+          </div>
+          
+          <div class="chart-section">
+            <h4>Распределение проектов по размерам</h4>
+            <div class="chart-wrapper">
+              <canvas id="projectSizesChart"></canvas>
+            </div>
+          </div>
+          
+          <div class="chart-section">
+            <h4>Типы сообщений</h4>
+            <div class="chart-wrapper">
+              <canvas id="messageTypesChart"></canvas>
+            </div>
+          </div>
+          
+          <div class="chart-section full-width">
+            <h4>Активность по дням</h4>
+            <div class="chart-wrapper">
+              <canvas id="dailyActivityChart"></canvas>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button id="export-charts" class="primary-btn">💾 Экспортировать графики</button>
+          <button onclick="closeModal('charts-modal')" class="secondary-btn">Закрыть</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html> 

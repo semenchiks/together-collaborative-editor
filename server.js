@@ -64,18 +64,23 @@ app.use(cors({
     : ["http://localhost:5173", "http://localhost:3000"],
   credentials: true
 }));
-app.use(express.static(path.join(__dirname), {
+// Раздаем статические файлы
+const staticPath = process.env.NODE_ENV === 'production' 
+  ? path.join(__dirname, 'dist')
+  : __dirname;
+
+app.use(express.static(staticPath, {
   etag: true,
   lastModified: true,
-  maxAge: 30000
+  maxAge: process.env.NODE_ENV === 'production' ? 86400000 : 30000 // 1 день в проде
 }));
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(staticPath, 'index.html'));
 });
 
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin.html'));
+  res.sendFile(path.join(staticPath, 'admin.html'));
 });
 
 app.get('/RelOAD', (req, res) => {

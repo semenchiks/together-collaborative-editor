@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Мой профиль</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-init.js"></script>
+  <script src="js/accessibility-init.js"></script>
+  <script defer src="profile.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/profile-DqCZ6chF.css">
+</head>
+<body>
+  <!-- Декоративные жёлтые элементы -->
+  <div class="yellow-deco deco-top-left"></div>
+  <div class="yellow-deco deco-top-right"></div>
+  <div class="yellow-deco deco-bottom-left"></div>
+  <div class="yellow-deco deco-bottom-right"></div>
+  <svg class="yellow-svg-bg" width="100%" height="100%" style="position:fixed;top:0;left:0;z-index:0;pointer-events:none;">
+    <circle cx="120" cy="120" r="80" stroke="#ffe000" stroke-width="4" fill="none"/>
+    <rect x="80" y="500" width="60" height="60" fill="#ffe000" fill-opacity="0.2"/>
+    <polygon points="1800,100 1850,200 1750,200" fill="#ffe000" fill-opacity="0.15"/>
+    <circle cx="1800" cy="700" r="50" fill="#ffe000" fill-opacity="0.12"/>
+    <rect x="1600" y="50" width="40" height="40" fill="#ffe000" fill-opacity="0.3"/>
+    <polygon points="300,900 350,1000 250,1000" fill="#ffe000" fill-opacity="0.18"/>
+    <rect x="100" y="900" width="80" height="20" fill="#ffe000" fill-opacity="0.12"/>
+    <circle cx="90" cy="800" r="30" fill="#ffe000" fill-opacity="0.18"/>
+    <rect x="1700" y="900" width="60" height="60" fill="#ffe000" fill-opacity="0.13"/>
+    <polygon points="100,100 140,140 60,140" fill="#ffe000" fill-opacity="0.18"/>
+    <circle cx="95%" cy="10%" r="30" fill="#ffe000" fill-opacity="0.18"/>
+    <rect x="90%" y="80%" width="50" height="50" fill="#ffe000" fill-opacity="0.13"/>
+  </svg>
+  <!-- Дополнительные насыщенные жёлтые фигуры -->
+  <div class="yellow-shape shape1"></div>
+  <div class="yellow-shape shape2"></div>
+  <div class="yellow-shape shape3"></div>
+  <div class="yellow-shape shape4"></div>
+  <div class="yellow-shape shape5"></div>
+  <div class="yellow-shape shape6"></div>
+  <svg class="yellow-svg-fg" width="100%" height="100%" viewBox="0 0 1920 1080" style="position:fixed;top:0;left:0;z-index:3;pointer-events:none;">
+    <circle cx="350" cy="180" r="32" fill="#ffe000" fill-opacity="0.7"/>
+    <rect x="1536" y="108" width="48" height="48" fill="#ffe000" fill-opacity="0.5"/> <!-- 80%, 10% -->
+    <polygon points="90,600 130,650 50,650" fill="#ffe000" fill-opacity="0.7"/>
+    <circle cx="1824" cy="972" r="22" fill="#ffe000" fill-opacity="0.6"/> <!-- 95%, 90% -->
+    <rect x="1152" y="864" width="36" height="36" fill="#ffe000" fill-opacity="0.4"/> <!-- 60%, 80% -->
+    <polygon points="1800,400 1850,480 1750,480" fill="#ffe000" fill-opacity="0.3"/>
+    <circle cx="1152" cy="216" r="18" fill="#ffe000" fill-opacity="0.7"/> <!-- 60%, 20% -->
+    <circle cx="384" cy="864" r="14" fill="#ffe000" fill-opacity="0.5"/> <!-- 20%, 80% -->
+    <rect x="192" y="648" width="22" height="22" fill="#ffe000" fill-opacity="0.6"/> <!-- 10%, 60% -->
+    <polygon points="1728,60 1766,90 1689,90" fill="#ffe000" fill-opacity="0.5"/> <!-- 90%, 92%, 88% -->
+  </svg>
+  <!-- Навигационные кнопки сверху -->
+  <div id="profile-nav-btns">
+    <button class="profile-nav-btn" id="go-gallery-btn">Перейти в галлерею</button>
+    <button class="profile-nav-btn" id="go-chat-btn">Перейти в чат</button>
+  </div>
+  <div class="profile-container">
+    <div class="profile-card">
+      <button class="profile-settings-btn" id="profile-settings-btn" title="Настройки">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffe000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.5"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 5 15.4a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 8a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 16 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 8c.14.31.22.65.22 1v.09A1.65 1.65 0 0 0 21 12c0 .35-.08.69-.22 1z"/></svg>
+      </button>
+      <div class="profile-avatar-block">
+        <img src="./assets/default-avatar.png-bmCCyaKw.png" alt="Аватар" class="profile-avatar" id="profile-avatar">
+        <div class="profile-nickname" id="profile-nickname">Никнейм</div>
+        <div class="profile-actions">
+          <button class="profile-action-btn" id="change-photo-btn">Изменить фото профиля</button>
+          <button class="profile-action-btn" id="logout-btn">Выйти из аккаунта</button>
+        </div>
+      </div>
+      <div class="profile-projects-block" id="profile-projects-block">
+        <!-- Здесь будут карточки проектов или надпись -->
+      </div>
+      <div class="profile-create-block">
+        <button class="profile-create-btn" id="profile-create-btn">Создать новый проект</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно входа/регистрации -->
+  <div class="modal" id="auth-modal">
+    <div class="modal-content">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="login-tab">Вход</button>
+        <button class="auth-tab" id="register-tab">Регистрация</button>
+      </div>
+      
+      <!-- Форма входа -->
+      <div class="auth-form" id="login-form">
+        <h2>Вход в аккаунт</h2>
+        <input type="email" id="login-email" placeholder="Email">
+        <input type="password" id="login-password" placeholder="Пароль">
+        <button id="login-btn">Войти</button>
+      </div>
+      
+      <!-- Форма регистрации -->
+      <div class="auth-form" id="register-form" style="display: none;">
+        <h2>Создать аккаунт</h2>
+        <input type="text" id="register-name" placeholder="Имя пользователя">
+        <input type="email" id="register-email" placeholder="Email">
+        <input type="password" id="register-password" placeholder="Пароль">
+        <input type="url" id="register-photo" placeholder="URL фото профиля (необязательно)">
+        <button id="register-btn">Зарегистрироваться</button>
+      </div>
+      
+      <div class="auth-error" id="auth-error"></div>
+    </div>
+  </div>
+
+  <!-- Модальное окно создания проекта -->
+  <div class="modal" id="create-project-modal">
+    <div class="modal-content">
+      <h2>Создать новый проект</h2>
+      <input type="text" id="new-project-name" placeholder="Название проекта">
+      <button id="start-project-btn">Начать</button>
+    </div>
+  </div>
+
+  <!-- Модальное окно изменения фото профиля -->
+  <div class="modal" id="change-photo-modal">
+    <div class="modal-content">
+      <h2>Изменить фото профиля</h2>
+      <input type="text" id="change-photo-url" placeholder="Вставьте URL фото">
+      <img id="change-photo-preview" src="./assets/default-avatar.png-bmCCyaKw.png" alt="Превью фото" style="width:100px;height:100px;border-radius:50%;margin:16px 0;object-fit:cover;border:2px solid #ffe000;background:#222;">
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <button id="save-photo-btn">Сохранить</button>
+        <button id="cancel-photo-btn">Отмена</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html> 
