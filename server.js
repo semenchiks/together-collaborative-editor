@@ -75,6 +75,7 @@ app.use(express.static(staticPath, {
   maxAge: process.env.NODE_ENV === 'production' ? 86400000 : 30000 // 1 день в проде
 }));
 
+// Обслуживание HTML страниц
 app.get('/', (req, res) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
@@ -83,9 +84,28 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(staticPath, 'admin.html'));
 });
 
+app.get('/editor', (req, res) => {
+  res.sendFile(path.join(staticPath, 'editor.html'));
+});
+
+app.get('/profile', (req, res) => {
+  res.sendFile(path.join(staticPath, 'profile.html'));
+});
+
+app.get('/gallery', (req, res) => {
+  res.sendFile(path.join(staticPath, 'gallery.html'));
+});
+
+app.get('/chat', (req, res) => {
+  res.sendFile(path.join(staticPath, 'chat.html'));
+});
+
 app.get('/RelOAD', (req, res) => {
   res.status(404).send('Admin page not found');
 });
+
+// Для всех остальных запросов (CSS, JS, изображения) позволяем Express обслуживать статические файлы
+// Если файл не найден, НЕ перенаправляем на index.html
 
 // --- API для сброса кодов (упрощено) ---
 app.post('/api/reset', async (req, res) => {

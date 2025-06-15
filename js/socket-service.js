@@ -61,10 +61,7 @@ export class SocketService {
      * Конструктор класса SocketService
      */
     constructor() {
-        this.socket = io('http://localhost:3000', {
-            reconnectionAttempts: this.maxReconnectionAttempts,
-            reconnectionDelay: this.reconnectionDelay,
-        });
+        this.socket = null; // Инициализируем в init()
         this.teamName = ''; // Это будет использоваться как roomName
         this.userName = ''; // Новое свойство для имени пользователя
 
