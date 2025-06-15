@@ -314,6 +314,14 @@ export class AppInitializer {
                 this.forcePreviewUpdate = false; // Сбрасываем флаг принудительного обновления после использования
 
                 console.log('[AppInitializer] Обновляем предпросмотр. HTML: ' + htmlCode.length + ' байт, CSS: ' + cssCode.length + ' байт');
+                
+                // Логируем содержимое HTML для отладки
+                if (htmlCode.includes('style.css')) {
+                    console.log('[AppInitializer] ВНИМАНИЕ: HTML код содержит ссылки на style.css:', htmlCode.substring(0, 500) + '...');
+                }
+                
+                // Заменяем ссылки на style.css на пустые строки, так как стили уже включены в CSS редактор
+                const cleanedHtmlCode = htmlCode.replace(/<link[^>]*href=['"](\.\/)?style\.css['"][^>]*>/gi, '<!-- style.css удален, используйте CSS редактор -->');
 
                 frameDocument.open();
                 frameDocument.write(`
@@ -334,7 +342,7 @@ export class AppInitializer {
                                 ${cssCode}
                             </style>
                         </head>
-                        <body>${htmlCode}</body>
+                        <body>${cleanedHtmlCode}</body>
                     </html>
                 `);
                 frameDocument.close(); // Важно закрыть документ для завершения парсинга
