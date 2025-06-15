@@ -341,7 +341,7 @@ function renderUsers(users) {
     <tr>
       <td>
         <img src="${user.photoURL || 'img/default-avatar.png'}" alt="Аватар" 
-             onerror="this.src='img/default-avatar.png'">
+             onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM0NDQiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9IiNmZmYiPjx0ZXh0IHg9IjEyIiB5PSIxNiIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5GKPC90ZXh0Pjwvc3ZnPgo8L3N2Zz4K';">
       </td>
       <td>${user.displayName || 'Без имени'}</td>
       <td>${user.email || 'Не указан'}</td>
@@ -407,7 +407,7 @@ function renderProjects(projects) {
     <tr>
       <td>
         <img src="${project.imgUrl || 'img/default-project.png'}" alt="Превью" class="project-img"
-             onerror="this.src='img/default-project.png'">
+             onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjNDQ0Ii8+Cjx0ZXh0IHg9IjIwIiB5PSIyNCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZmZmIj7wn5ODPC90ZXh0Pgo8L3N2Zz4K'">
       </td>
       <td>${project.name || 'Без названия'}</td>
       <td>${project.authorName}</td>
@@ -455,7 +455,7 @@ function renderMessages(messages) {
     <tr>
       <td>
         <img src="${message.photoURL || 'img/default-avatar.png'}" alt="Аватар"
-             onerror="this.src='img/default-avatar.png'">
+             onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM0NDQiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9IiNmZmYiPjx0ZXh0IHg9IjEyIiB5PSIxNiIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5GKPC90ZXh0Pjwvc3ZnPgo8L3N2Zz4K'">
       </td>
       <td>${message.user || 'Неизвестный'}</td>
       <td>${formatMessageContent(message)}</td>
