@@ -45,7 +45,9 @@ const httpServer = createServer(app);
 // --- Настройка старого Socket.IO сервера (для авторизации и прочего, что не связано с Yjs напрямую) ---
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: ["http://localhost:5173", "http://localhost:3000"],
+    origin: process.env.NODE_ENV === 'production' 
+      ? process.env.FRONTEND_URL || "*"
+      : ["http://localhost:5173", "http://localhost:3000"],
     methods: ["GET", "POST"],
     credentials: true
   },
@@ -56,7 +58,12 @@ const io = new SocketIOServer(httpServer, {
   maxHttpBufferSize: 1e6
 });
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.FRONTEND_URL || "*"
+    : ["http://localhost:5173", "http://localhost:3000"],
+  credentials: true
+}));
 app.use(express.static(path.join(__dirname), {
   etag: true,
   lastModified: true,
