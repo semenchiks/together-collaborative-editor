@@ -39,7 +39,7 @@ async function getUserData() {
     console.log('getUserData: no user, returning guest data');
     return {
       name: localStorage.getItem('userName') || 'Гость',
-      photoURL: 'img/default-avatar.png.png'
+      photoURL: 'img/default-avatar.png'
     };
   }
   
@@ -52,7 +52,7 @@ async function getUserData() {
     
     const result = {
       name: (data && data.displayName) || user.displayName || user.email.split('@')[0],
-      photoURL: (data && data.photoURL) || user.photoURL || 'img/default-avatar.png.png'
+      photoURL: (data && data.photoURL) || user.photoURL || 'img/default-avatar.png'
     };
     console.log('getUserData: final result:', result);
     return result;
@@ -60,7 +60,7 @@ async function getUserData() {
     console.error('getUserData: Firestore error:', e);
     const result = {
       name: user.displayName || user.email.split('@')[0],
-      photoURL: user.photoURL || 'img/default-avatar.png.png'
+      photoURL: user.photoURL || 'img/default-avatar.png'
     };
     console.log('getUserData: fallback result:', result);
     return result;
@@ -138,7 +138,7 @@ function renderMessages(snapshot) {
       div.className = 'welcome-card';
       div.innerHTML = `
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-          <img src="${msg.photoURL || 'img/default-avatar.png.png'}" alt="avatar" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #ffe000;background:#222;">
+          <img src="${msg.photoURL || 'img/default-avatar.png'}" alt="avatar" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #ffe000;background:#222;">
           <div>
             <div>${msg.user || 'Пользователь'}</div>
             <div>${msg.time || ''}</div>
@@ -164,7 +164,7 @@ function renderMessages(snapshot) {
       // Обычное сообщение
       div.style = 'margin-bottom:12px;padding:12px;border-radius:12px;background:#fff;box-shadow:0 1px 6px #ffe00022;display:flex;gap:12px;align-items:center;';
       div.innerHTML = `
-        <img src="${msg.photoURL || 'img/default-avatar.png.png'}" alt="avatar" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #ffe000;background:#222;flex-shrink:0;">
+        <img src="${msg.photoURL || 'img/default-avatar.png'}" alt="avatar" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #ffe000;background:#222;flex-shrink:0;">
         <div style="flex:1;">
           <div style="margin-bottom:4px;">
             <b style="color:#222;">${msg.user || 'Гость'}</b> 

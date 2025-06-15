@@ -340,8 +340,8 @@ function renderUsers(users) {
   tbody.innerHTML = users.map(user => `
     <tr>
       <td>
-        <img src="${user.photoURL || 'img/default-avatar.png.png'}" alt="Аватар" 
-             onerror="this.src='img/default-avatar.png.png'">
+        <img src="${user.photoURL || 'img/default-avatar.png'}" alt="Аватар" 
+             onerror="this.src='img/default-avatar.png'">
       </td>
       <td>${user.displayName || 'Без имени'}</td>
       <td>${user.email || 'Не указан'}</td>
@@ -454,8 +454,8 @@ function renderMessages(messages) {
   tbody.innerHTML = messages.map(message => `
     <tr>
       <td>
-        <img src="${message.photoURL || 'img/default-avatar.png.png'}" alt="Аватар"
-             onerror="this.src='img/default-avatar.png.png'">
+        <img src="${message.photoURL || 'img/default-avatar.png'}" alt="Аватар"
+             onerror="this.src='img/default-avatar.png'">
       </td>
       <td>${message.user || 'Неизвестный'}</td>
       <td>${formatMessageContent(message)}</td>

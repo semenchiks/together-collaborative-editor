@@ -64,13 +64,13 @@ function loadProfilePhoto(user) {
       } else if (user.photoURL) {
         avatar.src = user.photoURL;
       } else {
-        avatar.src = 'img/default-avatar.png.png';
+        avatar.src = 'img/default-avatar.png';
       }
     }).catch(() => {
-      avatar.src = user.photoURL || 'img/default-avatar.png.png';
+      avatar.src = user.photoURL || 'img/default-avatar.png';
     });
   } else {
-    avatar.src = user.photoURL || 'img/default-avatar.png.png';
+    avatar.src = user.photoURL || 'img/default-avatar.png';
   }
 }
 
@@ -350,7 +350,7 @@ function setupChangePhoto() {
   };
 
   urlInput.oninput = () => {
-    preview.src = urlInput.value || 'img/default-avatar.png.png';
+    preview.src = urlInput.value || 'img/default-avatar.png';
   };
 
   saveBtn.onclick = async () => {
