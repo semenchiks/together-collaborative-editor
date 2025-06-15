@@ -316,12 +316,24 @@ export class AppInitializer {
                 console.log('[AppInitializer] Обновляем предпросмотр. HTML: ' + htmlCode.length + ' байт, CSS: ' + cssCode.length + ' байт');
                 
                 // Логируем содержимое HTML для отладки
-                if (htmlCode.includes('style.css')) {
-                    console.log('[AppInitializer] ВНИМАНИЕ: HTML код содержит ссылки на style.css:', htmlCode.substring(0, 500) + '...');
+                if (htmlCode.includes('.css')) {
+                    console.log('[AppInitializer] ВНИМАНИЕ: HTML код содержит ссылки на CSS файлы:', htmlCode.substring(0, 500) + '...');
                 }
                 
-                // Заменяем ссылки на style.css на пустые строки, так как стили уже включены в CSS редактор
-                const cleanedHtmlCode = htmlCode.replace(/<link[^>]*href=['"](\.\/)?style\.css['"][^>]*>/gi, '<!-- style.css удален, используйте CSS редактор -->');
+                // Заменяем ссылки на локальные CSS файлы на комментарии, так как стили должны быть в CSS редакторе
+                let cleanedHtmlCode = htmlCode
+                    .replace(/<link[^>]*href=['"](\.\/)?style\.css['"][^>]*>/gi, '<!-- style.css удален, используйте CSS редактор -->')
+                    .replace(/<link[^>]*href=['"](\.\/)?layout-fix\.css['"][^>]*>/gi, '<!-- layout-fix.css удален, используйте CSS редактор -->')
+                    .replace(/<link[^>]*href=['"](\.\/)?admin\.css['"][^>]*>/gi, '<!-- admin.css удален, используйте CSS редактор -->')
+                    .replace(/<link[^>]*href=['"](\.\/)?profile\.css['"][^>]*>/gi, '<!-- profile.css удален, используйте CSS редактор -->')
+                    .replace(/<link[^>]*href=['"](\.\/)?gallery\.css['"][^>]*>/gi, '<!-- gallery.css удален, используйте CSS редактор -->')
+                    .replace(/<link[^>]*href=['"](\.\/)?chat\.css['"][^>]*>/gi, '<!-- chat.css удален, используйте CSS редактор -->')
+                    .replace(/<link[^>]*href=['"](\.\/)?welcome\.css['"][^>]*>/gi, '<!-- welcome.css удален, используйте CSS редактор -->');
+                
+                // Логируем результат замены
+                if (htmlCode !== cleanedHtmlCode) {
+                    console.log('[AppInitializer] Выполнены замены CSS ссылок в HTML коде');
+                }
 
                 frameDocument.open();
                 frameDocument.write(`
