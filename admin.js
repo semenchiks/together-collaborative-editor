@@ -2919,7 +2919,7 @@ async function deleteMessage(messageId) {
     }
     
     // Добавляем поле deleted в Firebase вместо физического удаления
-    await window.db.collection('messages').doc(messageId).update({
+    await window.db.collection('chat-messages').doc(messageId).update({
       deleted: true,
       deletedAt: new Date().toISOString(),
       deletedBy: currentUser.email
@@ -3049,7 +3049,7 @@ async function restoreMessage(messageId) {
     const message = pendingDeletionMessages[messageIndex];
     
     // Убираем поле deleted из Firebase
-    await window.db.collection('messages').doc(messageId).update({
+    await window.db.collection('chat-messages').doc(messageId).update({
       deleted: firebase.firestore.FieldValue.delete(),
       deletedAt: firebase.firestore.FieldValue.delete(),
       deletedBy: firebase.firestore.FieldValue.delete()
@@ -3158,7 +3158,7 @@ async function permanentDeleteMessage(messageId) {
     }
     
     // Удаляем из Firebase окончательно
-    await window.db.collection('messages').doc(messageId).delete();
+    await window.db.collection('chat-messages').doc(messageId).delete();
     
     // Удаляем из корзины
     pendingDeletionMessages.splice(messageIndex, 1);
