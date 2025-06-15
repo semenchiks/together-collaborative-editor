@@ -69,7 +69,18 @@ const staticPath = process.env.NODE_ENV === 'production'
   ? path.join(__dirname, 'dist')
   : __dirname;
 
-// Настройка MIME-типов
+// Специальные обработчики для статических файлов с правильными MIME-типами
+app.get('*.css', (req, res, next) => {
+  res.setHeader('Content-Type', 'text/css; charset=utf-8');
+  next();
+});
+
+app.get('*.js', (req, res, next) => {
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  next();
+});
+
+// Настройка статических файлов
 app.use(express.static(staticPath, {
   etag: true,
   lastModified: true,
@@ -82,6 +93,10 @@ app.use(express.static(staticPath, {
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
     } else if (path.endsWith('.html')) {
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    } else if (path.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
     }
     
     // В разработке отключаем кэш для быстрого обновления
