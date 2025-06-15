@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Мастер года — Добро пожаловать!</title>
   <link rel="stylesheet" href="welcome.css">
-  <script src="js/accessibility-init.js"></script>
+  <script type="module" src="js/accessibility-init.js"></script>
   <!-- Firebase CDN -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -111,7 +111,7 @@
   </div>
 
   <!-- Firebase и логика проверки роли -->
-  <script src="js/firebase-init.js"></script>
+  <script type="module" src="js/firebase-init.js"></script>
   <script>
     // Проверка роли пользователя и показ админ панели
     auth.onAuthStateChanged(async (user) => {

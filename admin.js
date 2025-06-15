@@ -595,34 +595,7 @@ Email: ${user.email || 'Не указан'}
 Фото: ${user.photoURL || 'Не указано'}`);
 }
 
-// Удаление пользователя
-async function deleteUser(userId) {
-  if (!confirm('Вы уверены, что хотите удалить этого пользователя? Это действие нельзя отменить.')) {
-    return;
-  }
-
-  try {
-    // Удаляем все проекты пользователя
-    const projectsSnapshot = await window.db.collection('users').doc(userId).collection('projects').get();
-    const batch = window.db.batch();
-    
-    projectsSnapshot.forEach(doc => {
-      batch.delete(doc.ref);
-    });
-    
-    // Удаляем самого пользователя
-    batch.delete(window.db.collection('users').doc(userId));
-    
-    await batch.commit();
-    
-    alert('Пользователь успешно удален');
-    loadUsers();
-    updateStats();
-  } catch (error) {
-    console.error('Ошибка удаления пользователя:', error);
-    alert('Ошибка при удалении пользователя');
-  }
-}
+// Удаление пользователя - функция перенесена в секцию мягкого удаления
 
 // Просмотр проекта
 async function viewProject(userId, projectId) {
@@ -708,39 +681,7 @@ async function viewProject(userId, projectId) {
   }
 }
 
-// Удаление проекта
-async function deleteProject(userId, projectId) {
-  if (!confirm('Вы уверены, что хотите удалить этот проект?')) {
-    return;
-  }
-
-  try {
-    await window.db.collection('users').doc(userId).collection('projects').doc(projectId).delete();
-    alert('Проект успешно удален');
-    loadProjects();
-    updateStats();
-  } catch (error) {
-    console.error('Ошибка удаления проекта:', error);
-    alert('Ошибка при удалении проекта');
-  }
-}
-
-// Удаление сообщения
-async function deleteMessage(messageId) {
-  if (!confirm('Вы уверены, что хотите удалить это сообщение?')) {
-    return;
-  }
-
-  try {
-    await window.db.collection('chat-messages').doc(messageId).delete();
-    alert('Сообщение успешно удалено');
-    loadMessages();
-    updateStats();
-  } catch (error) {
-    console.error('Ошибка удаления сообщения:', error);
-    alert('Ошибка при удалении сообщения');
-  }
-}
+// Функции удаления перенесены в секцию мягкого удаления
 
 // Вспомогательные функции
 function formatDate(dateString) {
