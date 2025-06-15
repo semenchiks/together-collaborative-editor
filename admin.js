@@ -3239,4 +3239,40 @@ function filterPendingMessages() {
 
 
 
-console.log('Админ панель инициализирована'); 
+console.log('Админ панель инициализирована');
+
+// ========== ЭКСПОРТ ФУНКЦИЙ ДЛЯ ONCLICK АТРИБУТОВ ==========
+// Делаем функции доступными глобально для onclick атрибутов в HTML
+
+// Основные функции управления
+window.generateQuickReport = generateQuickReport;
+window.showChartsModal = showChartsModal;
+window.showAddTemplateModal = showAddTemplateModal;
+window.closeModal = closeModal;
+
+// Функции пользователей
+window.viewUser = viewUser;
+window.deleteUser = deleteUser;
+window.changeUserRole = changeUserRole;
+
+// Функции проектов
+window.viewProject = viewProject;
+window.deleteProject = deleteProject;
+
+// Функции сообщений
+window.deleteMessage = deleteMessage;
+
+// Функции отчетов и шаблонов
+window.useTemplate = useTemplate;
+window.editTemplate = editTemplate;
+window.deleteTemplate = deleteTemplate;
+window.downloadReport = downloadReport;
+window.deleteReport = deleteReport;
+
+// Функции корзины (мягкое удаление)
+window.restoreUser = restoreUser;
+window.restoreProject = restoreProject;
+window.restoreMessage = restoreMessage;
+window.permanentDeleteUser = permanentDeleteUser;
+window.permanentDeleteProject = permanentDeleteProject;
+window.permanentDeleteMessage = permanentDeleteMessage; 
