@@ -13,6 +13,7 @@ import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 
 // --- Yjs ---
 import ws from 'ws';
@@ -139,7 +140,6 @@ app.get('/RelOAD', (req, res) => {
 // Перенаправление для default изображений из папки img на assets
 app.get('/img/default-project.png', (req, res) => {
   // Найти файл default-project в assets
-  const fs = require('fs');
   const assetsPath = path.join(staticPath, 'assets');
   
   try {
@@ -158,7 +158,6 @@ app.get('/img/default-project.png', (req, res) => {
 
 app.get('/img/default-avatar.png', (req, res) => {
   // Найти файл default-avatar в assets
-  const fs = require('fs');
   const assetsPath = path.join(staticPath, 'assets');
   
   try {
