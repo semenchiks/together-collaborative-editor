@@ -69,14 +69,13 @@ const staticPath = process.env.NODE_ENV === 'production'
   ? path.join(__dirname, 'dist')
   : __dirname;
 
-// Специальные обработчики для статических файлов с правильными MIME-типами
-app.get('*.css', (req, res, next) => {
-  res.setHeader('Content-Type', 'text/css; charset=utf-8');
-  next();
-});
-
-app.get('*.js', (req, res, next) => {
-  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+// Middleware для установки MIME-типов
+app.use((req, res, next) => {
+  if (req.path.endsWith('.css')) {
+    res.setHeader('Content-Type', 'text/css; charset=utf-8');
+  } else if (req.path.endsWith('.js')) {
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  }
   next();
 });
 
@@ -135,6 +134,45 @@ app.get('/chat', (req, res) => {
 
 app.get('/RelOAD', (req, res) => {
   res.status(404).send('Admin page not found');
+});
+
+// Перенаправление для default изображений из папки img на assets
+app.get('/img/default-project.png', (req, res) => {
+  // Найти файл default-project в assets
+  const fs = require('fs');
+  const assetsPath = path.join(staticPath, 'assets');
+  
+  try {
+    const files = fs.readdirSync(assetsPath);
+    const defaultProjectFile = files.find(file => file.startsWith('default-project-') && file.endsWith('.png'));
+    
+    if (defaultProjectFile) {
+      res.sendFile(path.join(assetsPath, defaultProjectFile));
+    } else {
+      res.status(404).send('Default project image not found');
+    }
+  } catch (error) {
+    res.status(404).send('Default project image not found');
+  }
+});
+
+app.get('/img/default-avatar.png', (req, res) => {
+  // Найти файл default-avatar в assets
+  const fs = require('fs');
+  const assetsPath = path.join(staticPath, 'assets');
+  
+  try {
+    const files = fs.readdirSync(assetsPath);
+    const defaultAvatarFile = files.find(file => file.startsWith('default-avatar-') && file.endsWith('.png'));
+    
+    if (defaultAvatarFile) {
+      res.sendFile(path.join(assetsPath, defaultAvatarFile));
+    } else {
+      res.status(404).send('Default avatar image not found');
+    }
+  } catch (error) {
+    res.status(404).send('Default avatar image not found');
+  }
 });
 
 // Для всех остальных запросов (CSS, JS, изображения) позволяем Express обслуживать статические файлы
