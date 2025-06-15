@@ -1,0 +1,3 @@
+/* Импортируем основные стили */
+@import './style.css';
+@import './layout-fix.css'; 
