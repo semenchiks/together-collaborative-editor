@@ -69,10 +69,28 @@ const staticPath = process.env.NODE_ENV === 'production'
   ? path.join(__dirname, 'dist')
   : __dirname;
 
+// Настройка MIME-типов
 app.use(express.static(staticPath, {
   etag: true,
   lastModified: true,
-  maxAge: process.env.NODE_ENV === 'production' ? 86400000 : 30000 // 1 день в проде
+  maxAge: process.env.NODE_ENV === 'production' ? 86400000 : 30000, // 1 день в проде
+  setHeaders: (res, path) => {
+    // Принудительно устанавливаем правильные MIME-типы
+    if (path.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css; charset=utf-8');
+    } else if (path.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    } else if (path.endsWith('.html')) {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    }
+    
+    // В разработке отключаем кэш для быстрого обновления
+    if (process.env.NODE_ENV !== 'production') {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
 }));
 
 // Обслуживание HTML страниц
