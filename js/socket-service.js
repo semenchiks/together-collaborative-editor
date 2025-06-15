@@ -80,6 +80,7 @@ export class SocketService {
         // cursorMovedListeners остается, будет вызываться из Yjs Awareness
         this.cursorMovedListeners = [];
         this.userDisconnectedListeners = []; // Пока остается на Socket.IO
+        this.yjsSyncedListeners = []; // Слушатели события полной синхронизации Yjs
 
         // --- Yjs Свойства ---
         this.yDoc = null;
@@ -317,6 +318,14 @@ export class SocketService {
                  if(isSynced) {
                     // Этот момент хорош для дополнительных действий после полной синхронизации
                     log(`Yjs: Документ "${roomName}" полностью синхронизирован. HTML: ${this.yTextHtml.length}, CSS: ${this.yTextCss.length}`);
+                    
+                    // Уведомляем слушателей о полной синхронизации
+                    this.yjsSyncedListeners.forEach(listener => listener({
+                        isSynced: true,
+                        htmlLength: this.yTextHtml.length,
+                        cssLength: this.yTextCss.length,
+                        roomName: roomName
+                    }));
                  }
             });
 
@@ -598,6 +607,7 @@ export class SocketService {
     onHtmlUpdated(listener) { this.htmlUpdatedListeners.push(listener); }
     onCssUpdated(listener) { this.cssUpdatedListeners.push(listener); }
     onCursorMoved(listener) { this.cursorMovedListeners.push(listener); }
+    onYjsSynced(listener) { this.yjsSyncedListeners.push(listener); }
 
 
     // --- Методы для доступа к Yjs объектам (для CodeEditorManager и др.) ---

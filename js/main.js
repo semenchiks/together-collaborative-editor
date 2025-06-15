@@ -147,52 +147,57 @@ window.addEventListener('monaco_loaded', () => {
             console.log('[MainJS] AccessibilityManager инициализирован.');
 
             // Загружаем код проекта из Firestore только если это новая комната (пустая)
-            setTimeout(() => {
-              if (window.socketService && typeof window.socketService.onCodeInitialized === 'function') {
-                window.socketService.onCodeInitialized(() => {
-                  const htmlEditor = window.appInitializer?.codeEditorManager?.htmlEditor;
-                  const cssEditor = window.appInitializer?.codeEditorManager?.cssEditor;
-                  if (!htmlEditor || !cssEditor) return;
-                  
-                  // Проверяем, есть ли уже код в Yjs документе (комната не пустая)
-                  const yTextHtml = window.socketService.getYTextHtml();
-                  const yTextCss = window.socketService.getYTextCss();
-                  const hasExistingCode = (yTextHtml && yTextHtml.length > 0) || (yTextCss && yTextCss.length > 0);
-                  
-                  if (hasExistingCode) {
-                    console.log('[MainJS] Комната уже содержит код, не загружаем из Firebase');
-                    return;
-                  }
-                  
-                  // Загружаем из Firebase только если комната пустая
-                  const params = new URLSearchParams(window.location.search);
-                  const projectId = params.get('id') || localStorage.getItem('projectId');
-                  if (!projectId) return;
-                  
-                  console.log('[MainJS] Комната пустая, загружаем код из Firebase для проекта:', projectId);
-                  firebase.auth().onAuthStateChanged(async user => {
-                    if (!user || !window.db) return;
-                    try {
-                      const doc = await window.db.collection('users').doc(user.uid).collection('projects').doc(projectId).get();
-                      if (!doc.exists) return;
-                      const p = doc.data();
-                      
-                      // Используем Yjs для установки кода, чтобы он синхронизировался с другими пользователями
-                      if (p.html && yTextHtml) {
-                        yTextHtml.insert(0, p.html);
-                        console.log('[MainJS] HTML код загружен из Firebase в Yjs');
-                      }
-                      if (p.css && yTextCss) {
-                        yTextCss.insert(0, p.css);
-                        console.log('[MainJS] CSS код загружен из Firebase в Yjs');
-                      }
-                    } catch (error) {
-                      console.error('[MainJS] Ошибка при загрузке проекта из Firebase:', error);
+            // Используем событие synced для точного определения момента полной синхронизации
+            if (window.socketService && typeof window.socketService.onYjsSynced === 'function') {
+              window.socketService.onYjsSynced((syncData) => {
+                console.log('[MainJS] Yjs полностью синхронизирован:', syncData);
+                
+                // Проверяем, есть ли уже код в Yjs документе (комната не пустая)
+                const hasExistingCode = syncData.htmlLength > 0 || syncData.cssLength > 0;
+                
+                if (hasExistingCode) {
+                  console.log('[MainJS] Комната уже содержит код, не загружаем из Firebase. HTML:', syncData.htmlLength, 'CSS:', syncData.cssLength);
+                  return;
+                }
+                
+                // Загружаем из Firebase только если комната пустая
+                const params = new URLSearchParams(window.location.search);
+                const projectId = params.get('id') || localStorage.getItem('projectId');
+                if (!projectId) {
+                  console.log('[MainJS] Нет projectId, не загружаем из Firebase');
+                  return;
+                }
+                
+                console.log('[MainJS] Комната пустая, загружаем код из Firebase для проекта:', projectId);
+                firebase.auth().onAuthStateChanged(async user => {
+                  if (!user || !window.db) return;
+                  try {
+                    const doc = await window.db.collection('users').doc(user.uid).collection('projects').doc(projectId).get();
+                    if (!doc.exists) {
+                      console.log('[MainJS] Проект не найден в Firebase:', projectId);
+                      return;
                     }
-                  });
+                    const p = doc.data();
+                    
+                    // Получаем Yjs объекты
+                    const yTextHtml = window.socketService.getYTextHtml();
+                    const yTextCss = window.socketService.getYTextCss();
+                    
+                    // Используем Yjs для установки кода, чтобы он синхронизировался с другими пользователями
+                    if (p.html && yTextHtml && yTextHtml.length === 0) {
+                      yTextHtml.insert(0, p.html);
+                      console.log('[MainJS] HTML код загружен из Firebase в Yjs');
+                    }
+                    if (p.css && yTextCss && yTextCss.length === 0) {
+                      yTextCss.insert(0, p.css);
+                      console.log('[MainJS] CSS код загружен из Firebase в Yjs');
+                    }
+                  } catch (error) {
+                    console.error('[MainJS] Ошибка при загрузке проекта из Firebase:', error);
+                  }
                 });
-              }
-            }, 1000); // Увеличиваем задержку, чтобы Yjs успел полностью синхронизироваться
+              });
+            }
             console.log('[MainJS] Приложение полностью инициализировано (включая компоненты Monaco).');
         }
     }
