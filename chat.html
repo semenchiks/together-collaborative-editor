@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Общий чат</title>
+  <link rel="stylesheet" href="chat.css">
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-init.js"></script>
+  <script src="js/accessibility-init.js"></script>
+</head>
+<body>
+  <!-- Декоративные жёлтые элементы -->
+  <div class="yellow-deco deco-top-left"></div>
+  <div class="yellow-deco deco-top-right"></div>
+  <div class="yellow-deco deco-bottom-left"></div>
+  <div class="yellow-deco deco-bottom-right"></div>
+  <svg class="yellow-svg-bg" width="100%" height="100%" style="position:fixed;top:0;left:0;z-index:0;pointer-events:none;">
+    <circle cx="120" cy="120" r="80" stroke="#ffe000" stroke-width="4" fill="none"/>
+    <rect x="80" y="500" width="60" height="60" fill="#ffe000" fill-opacity="0.2"/>
+    <polygon points="1800,100 1850,200 1750,200" fill="#ffe000" fill-opacity="0.15"/>
+    <circle cx="1800" cy="700" r="50" fill="#ffe000" fill-opacity="0.12"/>
+    <rect x="1600" y="50" width="40" height="40" fill="#ffe000" fill-opacity="0.3"/>
+    <polygon points="300,900 350,1000 250,1000" fill="#ffe000" fill-opacity="0.18"/>
+    <rect x="100" y="900" width="80" height="20" fill="#ffe000" fill-opacity="0.12"/>
+    <circle cx="90" cy="800" r="30" fill="#ffe000" fill-opacity="0.18"/>
+    <rect x="1700" y="900" width="60" height="60" fill="#ffe000" fill-opacity="0.13"/>
+    <polygon points="100,100 140,140 60,140" fill="#ffe000" fill-opacity="0.18"/>
+    <circle cx="95%" cy="10%" r="30" fill="#ffe000" fill-opacity="0.18"/>
+    <rect x="90%" y="80%" width="50" height="50" fill="#ffe000" fill-opacity="0.13"/>
+  </svg>
+  <!-- Дополнительные насыщенные жёлтые фигуры -->
+  <div class="yellow-shape shape1"></div>
+  <div class="yellow-shape shape2"></div>
+  <div class="yellow-shape shape3"></div>
+  <div class="yellow-shape shape4"></div>
+  <div class="yellow-shape shape5"></div>
+  <div class="yellow-shape shape6"></div>
+  <svg class="yellow-svg-fg" width="100%" height="100%" viewBox="0 0 1920 1080" style="position:fixed;top:0;left:0;z-index:3;pointer-events:none;">
+    <circle cx="350" cy="180" r="32" fill="#ffe000" fill-opacity="0.7"/>
+    <rect x="1536" y="108" width="48" height="48" fill="#ffe000" fill-opacity="0.5"/> <!-- 80%, 10% -->
+    <polygon points="90,600 130,650 50,650" fill="#ffe000" fill-opacity="0.7"/>
+    <circle cx="1824" cy="972" r="22" fill="#ffe000" fill-opacity="0.6"/> <!-- 95%, 90% -->
+    <rect x="1152" y="864" width="36" height="36" fill="#ffe000" fill-opacity="0.4"/> <!-- 60%, 80% -->
+    <polygon points="1800,400 1850,480 1750,480" fill="#ffe000" fill-opacity="0.3"/>
+    <circle cx="1152" cy="216" r="18" fill="#ffe000" fill-opacity="0.7"/> <!-- 60%, 20% -->
+    <circle cx="384" cy="864" r="14" fill="#ffe000" fill-opacity="0.5"/> <!-- 20%, 80% -->
+    <rect x="192" y="648" width="22" height="22" fill="#ffe000" fill-opacity="0.6"/> <!-- 10%, 60% -->
+    <polygon points="1728,60 1766,90 1689,90" fill="#ffe000" fill-opacity="0.5"/> <!-- 90%, 92%, 88% -->
+  </svg>  
+  <div class="welcome-header">
+    <div class="logos">
+      <img src="img/logo1.png" alt="Логотип 1" class="logo">
+      <img src="img/logo2.png" alt="Логотип 2" class="logo">
+      <img src="img/logo3.png" alt="Логотип 3" class="logo">
+      <img src="img/logo4.png" alt="Логотип 4" class="logo">
+      <img src="img/logo5.png" alt="Логотип 5" class="logo">
+    </div>
+    <div class="chat-nav-btns" style="position:absolute;right:40px;top:24px;display:flex;gap:18px;">
+      <button class="chat-nav-btn" onclick="window.location.href='profile.html'">Профиль</button>
+      <button class="chat-nav-btn" onclick="window.location.href='gallery.html'">Галерея</button>
+    </div>
+  </div>
+  <div class="welcome-main">
+    <div class="master-block">
+      <div class="master-title">
+        <span class="icon-dot"></span><span>О</span><span>Б</span><span>Щ</span><span>И</span><span>Й</span>
+        <span> </span><span>Ч</span><span>А</span><span>Т</span>
+        <img src="https://em-content.zobj.net/source/microsoft-teams/363/speech-balloon_1f4ac.png" alt="chat" style="width:32px;height:32px;vertical-align:middle;margin-left:8px;">
+      </div>
+      <div class="master-subtitle">общение для всех пользователей</div>
+    </div>
+    <div class="chat-container" style="max-width:900px;margin:0 auto 32px auto;width:100%;background:#fff7d6;border-radius:18px;box-shadow:0 2px 16px #ffe00022;padding:10px;">
+      <div id="chat-messages" style="min-height:400px;max-height:500px;overflow-y:auto;margin-bottom:24px;font-size:1.2em;line-height:1.5;padding:10px;"></div>
+      <form id="chat-form" style="display:flex;gap:12px;">
+        <input id="chat-input" type="text" placeholder="Введите сообщение..." style="flex:1;font-size:1.3em;padding:14px 18px;border:2px solid #ffe000;border-radius:10px;outline:none;">
+        <button type="submit" style="background:#ffe000;color:#222;font-weight:700;padding:14px 28px;border-radius:10px;border:none;cursor:pointer;box-shadow:0 2px 8px #ffe00033;font-size:1.1em;">Отправить</button>
+        <button type="button" id="share-project-btn" style="background:#fff;color:#222;font-weight:700;padding:14px 18px;border-radius:10px;border:2px solid #ffe000;cursor:pointer;box-shadow:0 2px 8px #ffe00022;font-size:1.1em;">Поделиться проектом</button>
+      </form>
+      <!-- Модальное окно выбора проекта -->
+      <div id="share-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="min-width:500px;max-width:700px;padding:40px 32px 32px 32px;">
+          <span class="close-modal" id="close-share-modal" style="position:absolute;top:16px;right:24px;font-size:2em;color:#ffe000;cursor:pointer;opacity:0.7;">×</span>
+          <h2 style="text-align:center;margin-bottom:24px;font-size:1.5em;">Выберите проект для отправки</h2>
+          <div id="share-projects-list" style="max-height:450px;overflow-y:auto;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="welcome-footer">
+    <div class="footer-icons">
+      <span class="footer-square"></span>
+      <span class="footer-circle"></span>
+      <span class="footer-triangle"></span>
+      <span class="footer-square"></span>
+      <span class="footer-circle"></span>
+      <span class="footer-triangle"></span>
+      <span class="footer-square"></span>
+    </div>
+  </div>
+  <script src="chat.js"></script>
+</body>
+</html> 
