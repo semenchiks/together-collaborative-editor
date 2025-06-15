@@ -115,8 +115,11 @@ export class SocketService {
 
             this._setupBeforeUnloadHandler(); // Обработчик закрытия страницы (пока оставляем, возможно, упростим)
             
-            // Подключаемся к Socket.IO серверу на порту 3000
-            this.socket = io('http://localhost:3000', {
+            // Определяем URL сервера в зависимости от окружения
+            const serverUrl = this._getServerUrl();
+            log(`Socket.IO: Подключение к серверу: ${serverUrl}`);
+            
+            this.socket = io(serverUrl, {
                 reconnectionAttempts: this.maxReconnectionAttempts,
                 reconnectionDelay: this.reconnectionDelay,
                 // Дополнительные параметры Socket.IO при необходимости
@@ -201,6 +204,36 @@ export class SocketService {
     }
     
     /**
+     * Определяет URL сервера в зависимости от окружения
+     * @private
+     * @returns {string} URL сервера для Socket.IO
+     */
+    _getServerUrl() {
+        // В продакшене используем текущий домен
+        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            // Используем тот же протокол и хост что и у страницы
+            return `${window.location.protocol}//${window.location.host}`;
+        }
+        // В разработке используем localhost:3000
+        return 'http://localhost:3000';
+    }
+
+    /**
+     * Определяет WebSocket URL для Yjs в зависимости от окружения
+     * @private
+     * @returns {string} WebSocket URL для Yjs
+     */
+    _getWebSocketUrl() {
+        // В продакшене используем текущий домен с ws/wss протоколом
+        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            return `${protocol}//${window.location.host}`;
+        }
+        // В разработке используем localhost:3000
+        return 'ws://localhost:3000';
+    }
+
+    /**
      * Обработчик ошибок соединения Socket.IO (для инициализации и переподключения)
      * @private
      */
@@ -255,8 +288,8 @@ export class SocketService {
         log(`Yjs: Инициализация соединения для комнаты: ${roomName}`);
         this.yDoc = new Y.Doc();
         
-        // Подключаемся к Yjs WebSocket серверу на порту 3000
-        const wsUrl = 'ws://localhost:3000';
+        // Определяем WebSocket URL для Yjs
+        const wsUrl = this._getWebSocketUrl();
         log(`Yjs: WebSocket URL: ${wsUrl}, Комната: ${roomName}`);
 
         try {
