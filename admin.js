@@ -2771,28 +2771,56 @@ function renderPendingUsers() {
     return;
   }
   
-  tbody.innerHTML = pendingDeletionUsers.map(user => `
-    <tr>
-      <td>
-        <img src="${user.photoURL || 'https://via.placeholder.com/40x40?text=👤'}" 
-             alt="Аватар" class="user-avatar">
-      </td>
-      <td>${user.displayName || 'Без имени'}</td>
-      <td>${user.email || 'Не указан'}</td>
-      <td>
-        <span class="role-badge ${user.role}">${user.role === 'admin' ? 'Админ' : 'Пользователь'}</span>
-      </td>
-      <td>
-        <div class="deletion-date">${formatDate(user.deletedAt)}</div>
-        <div class="deletion-info">Удалил: <span class="deletion-admin">${user.deletedBy}</span></div>
-      </td>
-      <td><span class="deletion-admin">${user.deletedBy}</span></td>
-      <td>
-        <button class="restore-btn" onclick="restoreUser('${user.uid || user.id}')">↩️ Восстановить</button>
-        <button class="permanent-delete-btn" onclick="permanentDeleteUser('${user.uid || user.id}')">🗑️ Удалить навсегда</button>
-      </td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = pendingDeletionUsers.map(user => {
+    // Подсчитываем каскадно удаленные элементы
+    const cascadeProjectsCount = user.cascadeDeletedProjects || 0;
+    const cascadeMessagesCount = user.cascadeDeletedMessages || 0;
+    
+    let cascadeInfo = '';
+    if (cascadeProjectsCount > 0 || cascadeMessagesCount > 0) {
+      cascadeInfo = `<div class="cascade-info" style="font-size: 11px; color: #888; margin-top: 2px;">`;
+      if (cascadeProjectsCount > 0) {
+        cascadeInfo += `📁 ${cascadeProjectsCount} проект(ов) `;
+      }
+      if (cascadeMessagesCount > 0) {
+        cascadeInfo += `💬 ${cascadeMessagesCount} сообщение(й)`;
+      }
+      cascadeInfo += `</div>`;
+    }
+    
+    return `
+      <tr>
+        <td>
+          <img src="${user.photoURL || 'img/default-avatar.png'}" 
+               alt="Аватар" class="user-avatar"
+               onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM0NDQiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9IiNmZmYiPjx0ZXh0IHg9IjEyIiB5PSIxNiIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5GKPC90ZXh0Pjwvc3ZnPgo8L3N2Zz4K';">
+        </td>
+        <td>
+          <div>${user.displayName || 'Без имени'}</div>
+          ${cascadeInfo}
+        </td>
+        <td>${user.email || 'Не указан'}</td>
+        <td>
+          <span class="role-badge ${user.role}">${user.role === 'admin' ? 'Админ' : 'Пользователь'}</span>
+        </td>
+        <td>
+          <div class="deletion-date">${formatDate(user.deletedAt)}</div>
+          <div class="deletion-info">Удалил: <span class="deletion-admin">${user.deletedBy}</span></div>
+        </td>
+        <td><span class="deletion-admin">${user.deletedBy}</span></td>
+        <td>
+          <button class="restore-btn" onclick="restoreUser('${user.uid || user.id}')" 
+                  title="Восстановить пользователя${cascadeProjectsCount > 0 || cascadeMessagesCount > 0 ? ' и связанные элементы' : ''}">
+            ↩️ Восстановить
+          </button>
+          <button class="permanent-delete-btn" onclick="permanentDeleteUser('${user.uid || user.id}')"
+                  title="Удалить навсегда пользователя${cascadeProjectsCount > 0 || cascadeMessagesCount > 0 ? ' и связанные элементы' : ''}">
+            🗑️ Удалить навсегда
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
 // Отображение проектов на удалении
@@ -2804,27 +2832,42 @@ function renderPendingProjects() {
     return;
   }
   
-  tbody.innerHTML = pendingDeletionProjects.map(project => `
-    <tr>
-      <td>
-        <div class="project-img">
-          <div class="project-preview-mini">${project.name ? project.name.charAt(0).toUpperCase() : '?'}</div>
-        </div>
-      </td>
-      <td>${project.name || 'Без названия'}</td>
-      <td>${project.authorName || 'Неизвестный'}</td>
-      <td>
-        <div class="deletion-date">${formatDate(project.deletedAt)}</div>
-        <div class="deletion-info">Удалил: <span class="deletion-admin">${project.deletedBy}</span></div>
-      </td>
-      <td><span class="deletion-admin">${project.deletedBy}</span></td>
-      <td>${calculateProjectSize(project)}</td>
-      <td>
-        <button class="restore-btn" onclick="restoreProject('${project.userId}', '${project.id}')">↩️ Восстановить</button>
-        <button class="permanent-delete-btn" onclick="permanentDeleteProject('${project.userId}', '${project.id}')">🗑️ Удалить навсегда</button>
-      </td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = pendingDeletionProjects.map(project => {
+    const isCascadeDeleted = project.cascadeDeletedWith === 'user';
+    const cascadeInfo = isCascadeDeleted ? 
+      `<div class="cascade-info" style="font-size: 11px; color: #888; margin-top: 2px;">🔗 Удален с пользователем</div>` : '';
+    
+    return `
+      <tr ${isCascadeDeleted ? 'style="background-color: rgba(255, 193, 7, 0.1);"' : ''}>
+        <td>
+          <div class="project-img">
+            <div class="project-preview-mini">${project.name ? project.name.charAt(0).toUpperCase() : '?'}</div>
+          </div>
+        </td>
+        <td>
+          <div>${project.name || 'Без названия'}</div>
+          ${cascadeInfo}
+        </td>
+        <td>${project.authorName || 'Неизвестный'}</td>
+        <td>
+          <div class="deletion-date">${formatDate(project.deletedAt)}</div>
+          <div class="deletion-info">Удалил: <span class="deletion-admin">${project.deletedBy}</span></div>
+        </td>
+        <td><span class="deletion-admin">${project.deletedBy}</span></td>
+        <td>${calculateProjectSize(project)}</td>
+        <td>
+          <button class="restore-btn" onclick="restoreProject('${project.userId}', '${project.id}')"
+                  ${isCascadeDeleted ? 'disabled title="Восстанавливается только с пользователем"' : ''}>
+            ↩️ Восстановить
+          </button>
+          <button class="permanent-delete-btn" onclick="permanentDeleteProject('${project.userId}', '${project.id}')"
+                  ${isCascadeDeleted ? 'disabled title="Удаляется только с пользователем"' : ''}>
+            🗑️ Удалить навсегда
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
 // Отображение сообщений на удалении
@@ -2836,33 +2879,49 @@ function renderPendingMessages() {
     return;
   }
   
-  tbody.innerHTML = pendingDeletionMessages.map(message => `
-    <tr>
-      <td>
-        <img src="${message.avatar || 'https://via.placeholder.com/40x40?text=👤'}" 
-             alt="Аватар" class="user-avatar">
-      </td>
-      <td>${message.user || 'Неизвестный'}</td>
-      <td>
-        <div class="message-content">${formatMessageContent(message)}</div>
-      </td>
-      <td>
-        <span class="message-type ${message.type}">${message.type === 'project' ? 'Проект' : 'Текст'}</span>
-      </td>
-      <td>
-        <div class="deletion-date">${formatDate(message.deletedAt)}</div>
-        <div class="deletion-info">Удалил: <span class="deletion-admin">${message.deletedBy}</span></div>
-      </td>
-      <td><span class="deletion-admin">${message.deletedBy}</span></td>
-      <td>
-        <button class="restore-btn" onclick="restoreMessage('${message.id}')">↩️ Восстановить</button>
-        <button class="permanent-delete-btn" onclick="permanentDeleteMessage('${message.id}')">🗑️ Удалить навсегда</button>
-      </td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = pendingDeletionMessages.map(message => {
+    const isCascadeDeleted = message.cascadeDeletedWith === 'user';
+    const cascadeInfo = isCascadeDeleted ? 
+      `<div class="cascade-info" style="font-size: 11px; color: #888; margin-top: 2px;">🔗 Удалено с пользователем</div>` : '';
+    
+    return `
+      <tr ${isCascadeDeleted ? 'style="background-color: rgba(255, 193, 7, 0.1);"' : ''}>
+        <td>
+          <img src="${message.avatar || 'img/default-avatar.png'}" 
+               alt="Аватар" class="user-avatar"
+               onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM0NDQiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9IiNmZmYiPjx0ZXh0IHg9IjEyIiB5PSIxNiIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5GKPC90ZXh0Pjwvc3ZnPgo8L3N2Zz4K';">
+        </td>
+        <td>
+          <div>${message.user || 'Неизвестный'}</div>
+          ${cascadeInfo}
+        </td>
+        <td>
+          <div class="message-content">${formatMessageContent(message)}</div>
+        </td>
+        <td>
+          <span class="message-type ${message.type}">${message.type === 'project' ? 'Проект' : 'Текст'}</span>
+        </td>
+        <td>
+          <div class="deletion-date">${formatDate(message.deletedAt)}</div>
+          <div class="deletion-info">Удалил: <span class="deletion-admin">${message.deletedBy}</span></div>
+        </td>
+        <td><span class="deletion-admin">${message.deletedBy}</span></td>
+        <td>
+          <button class="restore-btn" onclick="restoreMessage('${message.id}')"
+                  ${isCascadeDeleted ? 'disabled title="Восстанавливается только с пользователем"' : ''}>
+            ↩️ Восстановить
+          </button>
+          <button class="permanent-delete-btn" onclick="permanentDeleteMessage('${message.id}')"
+                  ${isCascadeDeleted ? 'disabled title="Удаляется только с пользователем"' : ''}>
+            🗑️ Удалить навсегда
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
-// Модифицированные функции удаления (теперь мягкое удаление)
+// Модифицированные функции удаления (теперь мягкое удаление с каскадным удалением)
 async function deleteUser(userId) {
   try {
     const user = allUsers.find(u => u.id === userId || u.uid === userId);
@@ -2870,38 +2929,164 @@ async function deleteUser(userId) {
       showNotification('Пользователь не найден', 'error');
       return;
     }
+
+    // Подтверждение каскадного удаления
+    const userProjects = allProjects.filter(p => p.userId === userId);
+    // Ищем сообщения пользователя по разным критериям
+    const userMessages = allMessages.filter(m => {
+      // Сравниваем по email
+      if (m.user === user.email) return true;
+      // Сравниваем по displayName
+      if (m.user === user.displayName) return true;
+      // Сравниваем по userId если есть
+      if (m.userId && m.userId === userId) return true;
+      // Сравниваем по uid если есть
+      if (m.uid && (m.uid === userId || m.uid === user.uid)) return true;
+      return false;
+    });
     
-    // Добавляем поле deleted в Firebase вместо физического удаления
+    let confirmMessage = `Вы уверены, что хотите удалить пользователя "${user.displayName || user.email}"?`;
+    if (userProjects.length > 0 || userMessages.length > 0) {
+      confirmMessage += `\n\nВместе с пользователем будут удалены:`;
+      if (userProjects.length > 0) {
+        confirmMessage += `\n- ${userProjects.length} проект(ов)`;
+      }
+      if (userMessages.length > 0) {
+        confirmMessage += `\n- ${userMessages.length} сообщение(й)`;
+      }
+      confirmMessage += `\n\nВсе элементы можно будет восстановить из корзины.`;
+    }
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+    
+    console.log(`Начинаем каскадное удаление пользователя ${userId}:`);
+    console.log(`- Проектов к удалению: ${userProjects.length}`);
+    console.log(`- Сообщений к удалению: ${userMessages.length}`);
+    
+    const deletionTimestamp = new Date().toISOString();
+    const deletedBy = currentUser.email;
+    
+    // 1. Помечаем пользователя как удаленный в Firebase
     const userDocId = user.id || user.uid;
     await window.db.collection('users').doc(userDocId).update({
       deleted: true,
-      deletedAt: new Date().toISOString(),
-      deletedBy: currentUser.email
+      deletedAt: deletionTimestamp,
+      deletedBy: deletedBy
     });
     
-    // Добавляем в список на удаление
+    // 2. Каскадное удаление проектов пользователя
+    let deletedProjectsCount = 0;
+    for (const project of userProjects) {
+      try {
+        // Помечаем проект как удаленный в Firebase
+        await window.db.collection('users').doc(userId).collection('projects').doc(project.id).update({
+          deleted: true,
+          deletedAt: deletionTimestamp,
+          deletedBy: deletedBy,
+          cascadeDeletedWith: 'user' // Помечаем что удален каскадно
+        });
+        
+        // Добавляем проект в корзину
+        const pendingProject = {
+          ...project,
+          deletedAt: deletionTimestamp,
+          deletedBy: deletedBy,
+          cascadeDeletedWith: 'user'
+        };
+        
+        pendingDeletionProjects.push(pendingProject);
+        deletedProjectsCount++;
+        
+        console.log(`Проект "${project.name}" помечен как удаленный`);
+      } catch (projectError) {
+        console.error(`Ошибка удаления проекта ${project.id}:`, projectError);
+      }
+    }
+    
+    // 3. Каскадное удаление сообщений пользователя
+    let deletedMessagesCount = 0;
+    for (const message of userMessages) {
+      try {
+        // Помечаем сообщение как удаленное в Firebase
+        await window.db.collection('chat-messages').doc(message.id).update({
+          deleted: true,
+          deletedAt: deletionTimestamp,
+          deletedBy: deletedBy,
+          cascadeDeletedWith: 'user' // Помечаем что удален каскадно
+        });
+        
+        // Добавляем сообщение в корзину
+        const pendingMessage = {
+          ...message,
+          avatar: user.photoURL || message.avatar || 'img/default-avatar.png',
+          deletedAt: deletionTimestamp,
+          deletedBy: deletedBy,
+          cascadeDeletedWith: 'user'
+        };
+        
+        pendingDeletionMessages.push(pendingMessage);
+        deletedMessagesCount++;
+        
+        console.log(`Сообщение ${message.id} помечено как удаленное`);
+      } catch (messageError) {
+        console.error(`Ошибка удаления сообщения ${message.id}:`, messageError);
+      }
+    }
+    
+    // 4. Добавляем пользователя в корзину
     const pendingUser = {
       ...user,
-      uid: user.id || user.uid, // Убеждаемся что uid есть
-      deletedAt: new Date().toISOString(),
-      deletedBy: currentUser.email
+      uid: user.id || user.uid,
+      deletedAt: deletionTimestamp,
+      deletedBy: deletedBy,
+      cascadeDeletedProjects: deletedProjectsCount,
+      cascadeDeletedMessages: deletedMessagesCount
     };
     
     pendingDeletionUsers.push(pendingUser);
+    
+    // 5. Сохраняем изменения в localStorage
     localStorage.setItem('pendingDeletionUsers', JSON.stringify(pendingDeletionUsers));
+    localStorage.setItem('pendingDeletionProjects', JSON.stringify(pendingDeletionProjects));
+    localStorage.setItem('pendingDeletionMessages', JSON.stringify(pendingDeletionMessages));
     
-    // Убираем из основного списка
+    // 6. Убираем элементы из основных списков
     allUsers = allUsers.filter(u => u.id !== userId && u.uid !== userId);
+    allProjects = allProjects.filter(p => p.userId !== userId);
+    // Убираем сообщения пользователя из основного списка
+    allMessages = allMessages.filter(m => {
+      // Исключаем по email
+      if (m.user === user.email) return false;
+      // Исключаем по displayName
+      if (m.user === user.displayName) return false;
+      // Исключаем по userId если есть
+      if (m.userId && m.userId === userId) return false;
+      // Исключаем по uid если есть
+      if (m.uid && (m.uid === userId || m.uid === user.uid)) return false;
+      return true;
+    });
     
+    // 7. Обновляем отображение
     renderUsers(allUsers);
+    renderProjects(allProjects);
+    renderMessages(allMessages);
     updateStats();
     updatePendingStats();
     
-    showNotification(`Пользователь ${user.displayName || user.email} помещен в корзину`, 'success');
+    // 8. Показываем уведомление о результатах
+    let notificationText = `Пользователь ${user.displayName || user.email} помещен в корзину`;
+    if (deletedProjectsCount > 0 || deletedMessagesCount > 0) {
+      notificationText += ` вместе с ${deletedProjectsCount} проект(ами) и ${deletedMessagesCount} сообщение(ями)`;
+    }
+    
+    showNotification(notificationText, 'success');
+    console.log(`Каскадное удаление завершено: пользователь + ${deletedProjectsCount} проектов + ${deletedMessagesCount} сообщений`);
     
   } catch (error) {
-    console.error('Ошибка мягкого удаления пользователя:', error);
-    showNotification('Ошибка при удалении пользователя', 'error');
+    console.error('Ошибка каскадного удаления пользователя:', error);
+    showNotification('Ошибка при удалении пользователя: ' + error.message, 'error');
   }
 }
 
@@ -3000,7 +3185,43 @@ async function restoreUser(userId) {
     
     const user = pendingDeletionUsers[userIndex];
     
-    // Убираем поле deleted из Firebase
+    // Проверяем есть ли каскадно удаленные элементы
+    const cascadeProjects = pendingDeletionProjects.filter(p => 
+      p.userId === userId && p.cascadeDeletedWith === 'user'
+    );
+    const cascadeMessages = pendingDeletionMessages.filter(m => {
+      if (m.cascadeDeletedWith !== 'user') return false;
+      // Проверяем по email
+      if (m.user === user.email) return true;
+      // Проверяем по displayName
+      if (m.user === user.displayName) return true;
+      // Проверяем по userId если есть
+      if (m.userId && m.userId === userId) return true;
+      // Проверяем по uid если есть
+      if (m.uid && (m.uid === userId || m.uid === user.uid)) return true;
+      return false;
+    });
+    
+    let confirmMessage = `Восстановить пользователя "${user.displayName || user.email}"?`;
+    if (cascadeProjects.length > 0 || cascadeMessages.length > 0) {
+      confirmMessage += `\n\nВместе с пользователем будут восстановлены:`;
+      if (cascadeProjects.length > 0) {
+        confirmMessage += `\n- ${cascadeProjects.length} проект(ов)`;
+      }
+      if (cascadeMessages.length > 0) {
+        confirmMessage += `\n- ${cascadeMessages.length} сообщение(й)`;
+      }
+    }
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+    
+    console.log(`Начинаем каскадное восстановление пользователя ${userId}:`);
+    console.log(`- Проектов к восстановлению: ${cascadeProjects.length}`);
+    console.log(`- Сообщений к восстановлению: ${cascadeMessages.length}`);
+    
+    // 1. Восстанавливаем пользователя в Firebase
     const userDocId = user.uid || user.id;
     await window.db.collection('users').doc(userDocId).update({
       deleted: firebase.firestore.FieldValue.delete(),
@@ -3008,27 +3229,117 @@ async function restoreUser(userId) {
       deletedBy: firebase.firestore.FieldValue.delete()
     });
     
-    // Убираем метаданные удаления
+    // 2. Каскадное восстановление проектов
+    let restoredProjectsCount = 0;
+    for (const project of cascadeProjects) {
+      try {
+        // Восстанавливаем проект в Firebase
+        await window.db.collection('users').doc(userId).collection('projects').doc(project.id).update({
+          deleted: firebase.firestore.FieldValue.delete(),
+          deletedAt: firebase.firestore.FieldValue.delete(),
+          deletedBy: firebase.firestore.FieldValue.delete(),
+          cascadeDeletedWith: firebase.firestore.FieldValue.delete()
+        });
+        
+        // Убираем метаданные удаления
+        delete project.deletedAt;
+        delete project.deletedBy;
+        delete project.cascadeDeletedWith;
+        
+        // Возвращаем в основной список
+        allProjects.push(project);
+        restoredProjectsCount++;
+        
+        console.log(`Проект "${project.name}" восстановлен`);
+      } catch (projectError) {
+        console.error(`Ошибка восстановления проекта ${project.id}:`, projectError);
+      }
+    }
+    
+    // 3. Каскадное восстановление сообщений
+    let restoredMessagesCount = 0;
+    for (const message of cascadeMessages) {
+      try {
+        // Восстанавливаем сообщение в Firebase
+        await window.db.collection('chat-messages').doc(message.id).update({
+          deleted: firebase.firestore.FieldValue.delete(),
+          deletedAt: firebase.firestore.FieldValue.delete(),
+          deletedBy: firebase.firestore.FieldValue.delete(),
+          cascadeDeletedWith: firebase.firestore.FieldValue.delete()
+        });
+        
+        // Убираем метаданные удаления
+        delete message.deletedAt;
+        delete message.deletedBy;
+        delete message.cascadeDeletedWith;
+        
+        // Возвращаем в основной список
+        allMessages.push(message);
+        restoredMessagesCount++;
+        
+        console.log(`Сообщение ${message.id} восстановлено`);
+      } catch (messageError) {
+        console.error(`Ошибка восстановления сообщения ${message.id}:`, messageError);
+      }
+    }
+    
+    // 4. Убираем метаданные удаления у пользователя
     delete user.deletedAt;
     delete user.deletedBy;
+    delete user.cascadeDeletedProjects;
+    delete user.cascadeDeletedMessages;
     
-    // Возвращаем в основной список
+    // 5. Возвращаем пользователя в основной список
     allUsers.push(user);
+    
+    // 6. Убираем восстановленные элементы из корзины
     pendingDeletionUsers.splice(userIndex, 1);
     
-    // Сохраняем изменения
-    localStorage.setItem('pendingDeletionUsers', JSON.stringify(pendingDeletionUsers));
+    // Убираем каскадно восстановленные проекты
+    cascadeProjects.forEach(project => {
+      const projectIndex = pendingDeletionProjects.findIndex(p => 
+        p.userId === project.userId && p.id === project.id
+      );
+      if (projectIndex !== -1) {
+        pendingDeletionProjects.splice(projectIndex, 1);
+      }
+    });
     
+    // Убираем каскадно восстановленные сообщения
+    cascadeMessages.forEach(message => {
+      const messageIndex = pendingDeletionMessages.findIndex(m => m.id === message.id);
+      if (messageIndex !== -1) {
+        pendingDeletionMessages.splice(messageIndex, 1);
+      }
+    });
+    
+    // 7. Сохраняем изменения в localStorage
+    localStorage.setItem('pendingDeletionUsers', JSON.stringify(pendingDeletionUsers));
+    localStorage.setItem('pendingDeletionProjects', JSON.stringify(pendingDeletionProjects));
+    localStorage.setItem('pendingDeletionMessages', JSON.stringify(pendingDeletionMessages));
+    
+    // 8. Обновляем отображение
     renderUsers(allUsers);
+    renderProjects(allProjects);
+    renderMessages(allMessages);
     renderPendingUsers();
+    renderPendingProjects();
+    renderPendingMessages();
     updateStats();
     updatePendingStats();
     
-    showNotification(`Пользователь ${user.displayName || user.email} восстановлен`, 'success');
+    // 9. Показываем уведомление о результатах
+    let notificationText = `Пользователь ${user.displayName || user.email} восстановлен`;
+    if (restoredProjectsCount > 0 || restoredMessagesCount > 0) {
+      notificationText += ` вместе с ${restoredProjectsCount} проект(ами) и ${restoredMessagesCount} сообщение(ями)`;
+    }
+    
+    showNotification(notificationText, 'success');
+    console.log(`Каскадное восстановление завершено: пользователь + ${restoredProjectsCount} проектов + ${restoredMessagesCount} сообщений`);
     
   } catch (error) {
-    console.error('Ошибка восстановления пользователя:', error);
-    showNotification('Ошибка при восстановлении пользователя', 'error');
+    console.error('Ошибка каскадного восстановления пользователя:', error);
+    showNotification('Ошибка при восстановлении пользователя: ' + error.message, 'error');
   }
 }
 
@@ -3116,10 +3427,6 @@ async function restoreMessage(messageId) {
 
 // Функции окончательного удаления
 async function permanentDeleteUser(userId) {
-  if (!confirm('Вы уверены, что хотите НАВСЕГДА удалить этого пользователя? Это действие нельзя отменить!')) {
-    return;
-  }
-  
   try {
     const userIndex = pendingDeletionUsers.findIndex(u => u.uid === userId || u.id === userId);
     if (userIndex === -1) {
@@ -3129,22 +3436,115 @@ async function permanentDeleteUser(userId) {
     
     const user = pendingDeletionUsers[userIndex];
     
-    // Удаляем из Firebase окончательно
+    // Находим каскадно удаленные элементы
+    const cascadeProjects = pendingDeletionProjects.filter(p => 
+      p.userId === userId && p.cascadeDeletedWith === 'user'
+    );
+    const cascadeMessages = pendingDeletionMessages.filter(m => {
+      if (m.cascadeDeletedWith !== 'user') return false;
+      // Проверяем по email
+      if (m.user === user.email) return true;
+      // Проверяем по displayName
+      if (m.user === user.displayName) return true;
+      // Проверяем по userId если есть
+      if (m.userId && m.userId === userId) return true;
+      // Проверяем по uid если есть
+      if (m.uid && (m.uid === userId || m.uid === user.uid)) return true;
+      return false;
+    });
+    
+    let confirmMessage = `Вы уверены, что хотите НАВСЕГДА удалить пользователя "${user.displayName || user.email}"?`;
+    if (cascadeProjects.length > 0 || cascadeMessages.length > 0) {
+      confirmMessage += `\n\nВместе с пользователем будут НАВСЕГДА удалены:`;
+      if (cascadeProjects.length > 0) {
+        confirmMessage += `\n- ${cascadeProjects.length} проект(ов)`;
+      }
+      if (cascadeMessages.length > 0) {
+        confirmMessage += `\n- ${cascadeMessages.length} сообщение(й)`;
+      }
+    }
+    confirmMessage += `\n\nЭто действие НЕЛЬЗЯ отменить!`;
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+    
+    console.log(`Начинаем каскадное окончательное удаление пользователя ${userId}:`);
+    console.log(`- Проектов к удалению: ${cascadeProjects.length}`);
+    console.log(`- Сообщений к удалению: ${cascadeMessages.length}`);
+    
+    // 1. Каскадно удаляем проекты из Firebase
+    let deletedProjectsCount = 0;
+    for (const project of cascadeProjects) {
+      try {
+        await window.db.collection('users').doc(userId).collection('projects').doc(project.id).delete();
+        deletedProjectsCount++;
+        console.log(`Проект "${project.name}" удален навсегда`);
+      } catch (projectError) {
+        console.error(`Ошибка окончательного удаления проекта ${project.id}:`, projectError);
+      }
+    }
+    
+    // 2. Каскадно удаляем сообщения из Firebase
+    let deletedMessagesCount = 0;
+    for (const message of cascadeMessages) {
+      try {
+        await window.db.collection('chat-messages').doc(message.id).delete();
+        deletedMessagesCount++;
+        console.log(`Сообщение ${message.id} удалено навсегда`);
+      } catch (messageError) {
+        console.error(`Ошибка окончательного удаления сообщения ${message.id}:`, messageError);
+      }
+    }
+    
+    // 3. Удаляем пользователя из Firebase окончательно
     const userDocId = user.uid || user.id;
     await window.db.collection('users').doc(userDocId).delete();
     
-    // Удаляем из корзины
+    // 4. Убираем все связанные элементы из корзины
     pendingDeletionUsers.splice(userIndex, 1);
-    localStorage.setItem('pendingDeletionUsers', JSON.stringify(pendingDeletionUsers));
     
+    // Убираем каскадно удаленные проекты
+    cascadeProjects.forEach(project => {
+      const projectIndex = pendingDeletionProjects.findIndex(p => 
+        p.userId === project.userId && p.id === project.id
+      );
+      if (projectIndex !== -1) {
+        pendingDeletionProjects.splice(projectIndex, 1);
+      }
+    });
+    
+    // Убираем каскадно удаленные сообщения
+    cascadeMessages.forEach(message => {
+      const messageIndex = pendingDeletionMessages.findIndex(m => m.id === message.id);
+      if (messageIndex !== -1) {
+        pendingDeletionMessages.splice(messageIndex, 1);
+      }
+    });
+    
+    // 5. Сохраняем изменения в localStorage
+    localStorage.setItem('pendingDeletionUsers', JSON.stringify(pendingDeletionUsers));
+    localStorage.setItem('pendingDeletionProjects', JSON.stringify(pendingDeletionProjects));
+    localStorage.setItem('pendingDeletionMessages', JSON.stringify(pendingDeletionMessages));
+    
+    // 6. Обновляем отображение
     renderPendingUsers();
+    renderPendingProjects();
+    renderPendingMessages();
     updatePendingStats();
     
-    showNotification(`Пользователь ${user.displayName || user.email} удален навсегда`, 'success');
+    // 7. Показываем уведомление о результатах
+    let notificationText = `Пользователь ${user.displayName || user.email} удален навсегда`;
+    if (deletedProjectsCount > 0 || deletedMessagesCount > 0) {
+      notificationText += ` вместе с ${deletedProjectsCount} проект(ами) и ${deletedMessagesCount} сообщение(ями)`;
+    }
+    
+    showNotification(notificationText, 'success');
+    console.log(`Каскадное окончательное удаление завершено: пользователь + ${deletedProjectsCount} проектов + ${deletedMessagesCount} сообщений`);
     
   } catch (error) {
-    console.error('Ошибка окончательного удаления пользователя:', error);
-    showNotification('Ошибка при окончательном удалении пользователя', 'error');
+    console.error('Ошибка каскадного окончательного удаления пользователя:', error);
+    showNotification('Ошибка при окончательном удалении пользователя: ' + error.message, 'error');
   }
 }
 
