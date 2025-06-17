@@ -2,6 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Галерея проектов пользователей</title>
   <link rel="stylesheet" href="gallery.css">
   <!-- Firebase -->
@@ -73,8 +74,8 @@
       </div>
       <div class="master-subtitle">проекты пользователей</div>
     </div>
-    <div style="display:flex;justify-content:center;margin-bottom:18px;">
-      <input id="gallery-search" type="text" placeholder="Поиск по названию или автору" style="font-size:1.1em;padding:10px 18px;border:2px solid #ffe000;border-radius:8px;min-width:260px;max-width:420px;width:100%;outline:none;box-shadow:0 2px 8px #ffe00022;">
+    <div class="gallery-search-container">
+      <input id="gallery-search" type="text" placeholder="Поиск по названию или автору">
     </div>
     <div class="welcome-cards" id="gallery-cards">
       <!-- Здесь будут карточки проектов -->
