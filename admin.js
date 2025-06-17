@@ -279,10 +279,12 @@ async function loadUsers() {
     let snapshot;
     try {
       snapshot = await window.db.collection('users').orderBy('createdAt', 'desc').get();
+      console.log('Пользователи загружены с сортировкой по createdAt');
     } catch (sortError) {
       console.log('Не удалось отсортировать по createdAt, загружаем без сортировки:', sortError);
       // Если не получается отсортировать, загружаем без сортировки
       snapshot = await window.db.collection('users').get();
+      console.log('Пользователи загружены без сортировки');
     }
     
     allUsers = [];
@@ -300,8 +302,15 @@ async function loadUsers() {
       
       // Подсчитываем количество проектов пользователя (исключая удаленные)
       try {
-        const projectsSnapshot = await window.db.collection('users').doc(doc.id).collection('projects').where('deleted', '!=', true).get();
-        const projectsCount = projectsSnapshot.size;
+        const projectsSnapshot = await window.db.collection('users').doc(doc.id).collection('projects').get();
+        // Фильтруем проекты, исключая удаленные
+        const activeProjects = projectsSnapshot.docs.filter(projectDoc => {
+          const projectData = projectDoc.data();
+          return !projectData.deleted; // Исключаем проекты с deleted: true
+        });
+        const projectsCount = activeProjects.length;
+        
+        console.log(`Пользователь ${doc.id} имеет ${projectsCount} активных проектов из ${projectsSnapshot.size} общих`);
         
         allUsers.push({
           id: doc.id,
@@ -385,23 +394,49 @@ async function loadProjects() {
         continue;
       }
       
-      const projectsSnapshot = await window.db.collection('users').doc(userDoc.id).collection('projects').orderBy('createdAt', 'desc').get();
-      
-      projectsSnapshot.forEach(projectDoc => {
-        const projectData = projectDoc.data();
+      try {
+        const projectsSnapshot = await window.db.collection('users').doc(userDoc.id).collection('projects').orderBy('createdAt', 'desc').get();
         
-        // Пропускаем удаленные проекты
-        if (projectData.deleted) {
-          return;
-        }
-        
-        allProjects.push({
-          id: projectDoc.id,
-          userId: userDoc.id,
-          authorName: userData.displayName || userData.email?.split('@')[0] || 'Неизвестный',
-          ...projectData
+        projectsSnapshot.forEach(projectDoc => {
+          const projectData = projectDoc.data();
+          
+          // Пропускаем удаленные проекты
+          if (projectData.deleted) {
+            return;
+          }
+          
+          allProjects.push({
+            id: projectDoc.id,
+            userId: userDoc.id,
+            authorName: userData.displayName || userData.email?.split('@')[0] || 'Неизвестный',
+            ...projectData
+          });
         });
-      });
+      } catch (projectError) {
+        console.error(`Ошибка загрузки проектов для пользователя ${userDoc.id}:`, projectError);
+        // Если не удается отсортировать по createdAt, пробуем без сортировки
+        try {
+          const projectsSnapshot = await window.db.collection('users').doc(userDoc.id).collection('projects').get();
+          
+          projectsSnapshot.forEach(projectDoc => {
+            const projectData = projectDoc.data();
+            
+            // Пропускаем удаленные проекты
+            if (projectData.deleted) {
+              return;
+            }
+            
+            allProjects.push({
+              id: projectDoc.id,
+              userId: userDoc.id,
+              authorName: userData.displayName || userData.email?.split('@')[0] || 'Неизвестный',
+              ...projectData
+            });
+          });
+        } catch (fallbackError) {
+          console.error(`Критическая ошибка загрузки проектов для пользователя ${userDoc.id}:`, fallbackError);
+        }
+      }
     }
 
     renderProjects(allProjects);
