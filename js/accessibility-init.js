@@ -166,9 +166,49 @@ class SimpleAccessibilityManager {
                 animation: none !important;
                 transform: none !important;
             }
-            html.colorblind-protanopia { filter: url(#protanopia-filter); }
-            html.colorblind-deuteranopia { filter: url(#deuteranopia-filter); }
-            html.colorblind-tritanopia { filter: url(#tritanopia-filter); }
+            /* Применяем фильтры дальтонизма селективно, исключая интерактивные элементы */
+            html.colorblind-protanopia body::before,
+            html.colorblind-protanopia body::after,
+            html.colorblind-protanopia .container::before,
+            html.colorblind-protanopia .container::after,
+            html.colorblind-protanopia .right,
+            html.colorblind-protanopia .editor-header,
+            html.colorblind-protanopia .accessibility-panel,
+            html.colorblind-protanopia .accessibility-btn,
+            html.colorblind-protanopia .login-modal { filter: url(#protanopia-filter); }
+            
+            html.colorblind-deuteranopia body::before,
+            html.colorblind-deuteranopia body::after,
+            html.colorblind-deuteranopia .container::before,
+            html.colorblind-deuteranopia .container::after,
+            html.colorblind-deuteranopia .right,
+            html.colorblind-deuteranopia .editor-header,
+            html.colorblind-deuteranopia .accessibility-panel,
+            html.colorblind-deuteranopia .accessibility-btn,
+            html.colorblind-deuteranopia .login-modal { filter: url(#deuteranopia-filter); }
+            
+            html.colorblind-tritanopia body::before,
+            html.colorblind-tritanopia body::after,
+            html.colorblind-tritanopia .container::before,
+            html.colorblind-tritanopia .container::after,
+            html.colorblind-tritanopia .right,
+            html.colorblind-tritanopia .editor-header,
+            html.colorblind-tritanopia .accessibility-panel,
+            html.colorblind-tritanopia .accessibility-btn,
+            html.colorblind-tritanopia .login-modal { filter: url(#tritanopia-filter); }
+            
+            /* Специальные стили для редакторов в режимах дальтонизма */
+            html.colorblind-protanopia .monaco-editor .view-lines,
+            html.colorblind-protanopia .monaco-editor .overflow-guard { filter: url(#protanopia-filter); }
+            html.colorblind-deuteranopia .monaco-editor .view-lines,
+            html.colorblind-deuteranopia .monaco-editor .overflow-guard { filter: url(#deuteranopia-filter); }
+            html.colorblind-tritanopia .monaco-editor .view-lines,
+            html.colorblind-tritanopia .monaco-editor .overflow-guard { filter: url(#tritanopia-filter); }
+            
+            /* Убеждаемся, что основные контейнеры редакторов остаются интерактивными */
+            html.colorblind-protanopia .monaco-editor,
+            html.colorblind-deuteranopia .monaco-editor,
+            html.colorblind-tritanopia .monaco-editor { filter: none !important; pointer-events: auto !important; }
             
             @media (max-width: 768px) {
                 .accessibility-panel { right: 10px; left: 10px; width: auto; top: 120px; }

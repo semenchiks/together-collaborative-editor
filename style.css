@@ -514,11 +514,12 @@ label {
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    z-index: 10000;
+    z-index: 99999;
     box-shadow: 0 4px 16px rgba(255, 224, 0, 0.4);
     border: 2px solid #222;
     transition: all 0.3s ease;
     font-weight: 700;
+    pointer-events: auto !important;
 }
 
 .accessibility-btn:hover {
@@ -545,11 +546,12 @@ label {
     border-radius: 16px;
     padding: 20px;
     box-shadow: 0 8px 32px rgba(255, 224, 0, 0.3);
-    z-index: 9998;
+    z-index: 99998;
     transform: translateY(20px);
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
+    pointer-events: auto !important;
 }
 
 .accessibility-panel.show {
@@ -1544,16 +1546,86 @@ html.contrast-high .accessibility-btn-group button.active {
 }
 
 /* Режимы дальтонизма */
-html.colorblind-protanopia {
+/* Применяем фильтры дальтонизма селективно, исключая Monaco редакторы */
+html.colorblind-protanopia body::before,
+html.colorblind-protanopia body::after,
+html.colorblind-protanopia .container::before,
+html.colorblind-protanopia .container::after,
+html.colorblind-protanopia .right,
+html.colorblind-protanopia .editor-header,
+html.colorblind-protanopia .accessibility-panel,
+html.colorblind-protanopia .accessibility-btn,
+html.colorblind-protanopia .login-modal {
     filter: url('#protanopia-filter');
 }
 
-html.colorblind-deuteranopia {
+html.colorblind-deuteranopia body::before,
+html.colorblind-deuteranopia body::after,
+html.colorblind-deuteranopia .container::before,
+html.colorblind-deuteranopia .container::after,
+html.colorblind-deuteranopia .right,
+html.colorblind-deuteranopia .editor-header,
+html.colorblind-deuteranopia .accessibility-panel,
+html.colorblind-deuteranopia .accessibility-btn,
+html.colorblind-deuteranopia .login-modal {
     filter: url('#deuteranopia-filter');
 }
 
-html.colorblind-tritanopia {
+html.colorblind-tritanopia body::before,
+html.colorblind-tritanopia body::after,
+html.colorblind-tritanopia .container::before,
+html.colorblind-tritanopia .container::after,
+html.colorblind-tritanopia .right,
+html.colorblind-tritanopia .editor-header,
+html.colorblind-tritanopia .accessibility-panel,
+html.colorblind-tritanopia .accessibility-btn,
+html.colorblind-tritanopia .login-modal {
     filter: url('#tritanopia-filter');
+}
+
+/* Специальные стили для Monaco редакторов в режимах дальтонизма */
+html.colorblind-protanopia .monaco-editor .view-lines,
+html.colorblind-protanopia .monaco-editor .overflow-guard {
+    filter: url('#protanopia-filter');
+}
+
+html.colorblind-deuteranopia .monaco-editor .view-lines,
+html.colorblind-deuteranopia .monaco-editor .overflow-guard {
+    filter: url('#deuteranopia-filter');
+}
+
+html.colorblind-tritanopia .monaco-editor .view-lines,
+html.colorblind-tritanopia .monaco-editor .overflow-guard {
+    filter: url('#tritanopia-filter');
+}
+
+/* Убеждаемся, что основные контейнеры Monaco остаются интерактивными */
+html.colorblind-protanopia .monaco-editor,
+html.colorblind-deuteranopia .monaco-editor,
+html.colorblind-tritanopia .monaco-editor,
+html.colorblind-protanopia .editor-instance-container,
+html.colorblind-deuteranopia .editor-instance-container,
+html.colorblind-tritanopia .editor-instance-container {
+    filter: none !important;
+    pointer-events: auto !important;
+}
+
+/* Дополнительная защита для редакторов */
+.monaco-editor,
+.editor-instance-container,
+#html-code,
+#css-code {
+    pointer-events: auto !important;
+    user-select: text !important;
+}
+
+/* Обеспечиваем интерактивность при любых изменениях доступности */
+html.font-size-large .monaco-editor,
+html.font-size-xlarge .monaco-editor,
+html.contrast-high .monaco-editor,
+html.reduce-animations .monaco-editor {
+    pointer-events: auto !important;
+    user-select: text !important;
 }
 
 /* Уменьшение анимаций */
